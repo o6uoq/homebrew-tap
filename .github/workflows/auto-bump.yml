@@ -1,0 +1,50 @@
+name: Auto-bump formulas
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Nightly at 12am UTC
+  workflow_dispatch:
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check slidev
+        id: slidev
+        run: |
+          LATEST=$(curl -s https://registry.npmjs.org/@slidev/cli | jq -r '.["dist-tags"].latest')
+          CURRENT=$(grep -oP 'cli-\K[0-9.]+(?=\.tgz)' Formula/slidev.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            SHA=$(curl -sL "https://registry.npmjs.org/@slidev/cli/-/cli-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
+            sed -i "s|cli-${CURRENT}.tgz|cli-${LATEST}.tgz|" Formula/slidev.rb
+            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/slidev.rb
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check try
+        id: try
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/tobi/try/releases/latest | jq -r '.tag_name' | tr -d 'v')
+          CURRENT=$(grep -oP 'tags/v\K[0-9.]+' Formula/try.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            SHA=$(curl -sL "https://github.com/tobi/try/archive/refs/tags/v${LATEST}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+            sed -i "s|tags/v${CURRENT}|tags/v${LATEST}|" Formula/try.rb
+            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/try.rb
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR
+        if: steps.slidev.outputs.bumped || steps.try.outputs.bumped
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "🧹 chore: bump formula versions"
+          title: "🧹 Bump formulas"
+          body: |
+            **Version bumps:**
+            ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
+            ${{ steps.try.outputs.bumped && format('- try: {0}', steps.try.outputs.bumped) || '' }}
+
+            @o6uoq
+          branch: auto-bump
+          delete-branch: true
