@@ -12,7 +12,7 @@ jobs:
   bump:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check slidev
         id: slidev
@@ -40,7 +40,7 @@ jobs:
 
       - name: Create PR
         if: steps.slidev.outputs.bumped || steps.try.outputs.bumped
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "🧹 chore: bump formula versions"
           title: "🧹 Bump formulas"
