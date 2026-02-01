@@ -4,6 +4,10 @@ on:
     - cron: '0 0 * * *'  # Nightly at 12am UTC
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   bump:
     runs-on: ubuntu-latest
@@ -13,8 +17,8 @@ jobs:
       - name: Check slidev
         id: slidev
         run: |
-          LATEST=$(curl -s https://registry.npmjs.org/@slidev/cli | jq -r '.["dist-tags"].latest')
-          CURRENT=$(grep -oP 'cli-\K[0-9.]+(?=\.tgz)' Formula/slidev.rb)
+          LATEST=$(curl -s https://api.github.com/repos/slidevjs/slidev/releases/latest | jq -r '.tag_name' | tr -d 'v')
+          CURRENT=$(grep -oP 'cli-\K[0-9]+\.[0-9]+\.[0-9]+(?=\.tgz)' Formula/slidev.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
             SHA=$(curl -sL "https://registry.npmjs.org/@slidev/cli/-/cli-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
             sed -i "s|cli-${CURRENT}.tgz|cli-${LATEST}.tgz|" Formula/slidev.rb
@@ -25,8 +29,8 @@ jobs:
       - name: Check try
         id: try
         run: |
-          LATEST=$(curl -s https://api.github.com/repos/tobi/try/releases/latest | jq -r '.tag_name' | tr -d 'v')
-          CURRENT=$(grep -oP 'tags/v\K[0-9.]+' Formula/try.rb)
+          LATEST=$(curl -s https://api.github.com/repos/tobi/try/tags | jq -r '.[0].name' | tr -d 'v')
+          CURRENT=$(grep -oP 'tags/v\K[0-9]+\.[0-9]+\.[0-9]+' Formula/try.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
             SHA=$(curl -sL "https://github.com/tobi/try/archive/refs/tags/v${LATEST}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
             sed -i "s|tags/v${CURRENT}|tags/v${LATEST}|" Formula/try.rb
