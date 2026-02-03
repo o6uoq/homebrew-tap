@@ -12,7 +12,8 @@ class Try < Formula
   depends_on "ruby"
 
   def install
-    bin.install "try.rb" => "try"
+    libexec.install "try.rb", "lib"
+    (bin/"try").write_env_script libexec/"try.rb", PATH: "#{Formula["ruby"].opt_bin}:$PATH"
   end
 
   def caveats
