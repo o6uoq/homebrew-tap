@@ -7,13 +7,13 @@ class Try < Formula
 
   # PR ref: https://github.com/tobi/try/pull/33
   # Tap-only until upstream provides a Homebrew formula.
-  # Note: main branch uses Data.define which is incompatible with Ruby 4.0
+  # Note: uses Data.define which requires Ruby 3.2+ but is broken in Ruby 4.0
 
-  depends_on "ruby"
+  depends_on "ruby@3.3"
 
   def install
     libexec.install "try.rb", "lib"
-    (bin/"try").write_env_script libexec/"try.rb", PATH: "#{Formula["ruby"].opt_bin}:$PATH"
+    (bin/"try").write_env_script libexec/"try.rb", PATH: "#{Formula["ruby@3.3"].opt_bin}:$PATH"
   end
 
   def caveats
