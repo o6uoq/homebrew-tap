@@ -1,8 +1,8 @@
 class Try < Formula
   desc "Ephemeral workspace manager with fuzzy search"
   homepage "https://github.com/tobi/try"
-  url "https://github.com/tobi/try/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "267f2b63561de396a8938c6f41e68e8cecc635d05c582a1f866c0bbf37676af2"
+  url "https://github.com/tobi/try/archive/refs/tags/v1.8.1.tar.gz"
+  sha256 "8c6cd6e1b6fc987732f892743c402035235995180c51a2f916845c2ee800bce6"
   license "MIT"
 
   # PR ref: https://github.com/tobi/try/pull/33
