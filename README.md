@@ -1,14 +1,14 @@
-# Homebrew Tap (`o6uoq/tap`)
+# 🍺 Homebrew Taps via (`o6uoq/tap`)
 
 Tap for formulas not available in `homebrew/core` or an official upstream tap.
 
-## Formulas
+## 📦 Formulas
 
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
 - [try](https://github.com/tobi/try) - ephemeral workspace manager
 
-## Install
+## 🚀 Install
 
 ```bash
 brew install o6uoq/tap/<formula>
@@ -17,7 +17,7 @@ brew install o6uoq/tap/openspec
 brew install o6uoq/tap/slidev
 ```
 
-## Add a Formula
+## ➕ Add a Formula
 
 ```bash
 # 1) Create Formula/<name>.rb
@@ -30,7 +30,7 @@ brew test o6uoq/tap/<name>
 pre-commit run -a
 ```
 
-## Update a Formula
+## 🔄 Update a Formula
 
 ```bash
 # Edit Formula/<name>.rb (version + sha256)
@@ -39,7 +39,7 @@ brew test o6uoq/tap/<name>
 pre-commit run -a
 ```
 
-## SHA256 Helper
+## 🔑 SHA256 Helper
 
 ```bash
 curl -fsSL <tarball-url> | shasum -a 256
