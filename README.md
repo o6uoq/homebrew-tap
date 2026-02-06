@@ -1,29 +1,46 @@
-# 🍺 Homebrew formulas for o6uoq
+# 🍺 Homebrew Taps via (`o6uoq/tap`)
+
+Tap for formulas not available in `homebrew/core` or an official upstream tap.
 
 ## 📦 Formulas
 
+- [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
 - [try](https://github.com/tobi/try) - ephemeral workspace manager
 
-## ➕ Add formula
+## 🚀 Install
 
 ```bash
-# Create Formula/foo.rb, then:
-brew audit --strict --new-formula o6uoq/tap/foo
-brew install o6uoq/tap/foo
-brew test o6uoq/tap/foo
+brew install o6uoq/tap/<formula>
+# examples:
+brew install o6uoq/tap/openspec
+brew install o6uoq/tap/slidev
 ```
 
-## 🔄 Update formula
+## ➕ Add a Formula
 
 ```bash
-# Edit Formula/foo.rb (bump version, update sha256)
-brew reinstall o6uoq/tap/foo
-brew test o6uoq/tap/foo
+# 1) Create Formula/<name>.rb
+# 2) Validate locally
+brew audit --new --strict o6uoq/tap/<name>
+brew install --build-from-source o6uoq/tap/<name>
+brew test o6uoq/tap/<name>
+
+# 3) Required before commit
+pre-commit run -a
 ```
 
-## 🔑 Get sha256
+## 🔄 Update a Formula
 
 ```bash
-curl -sL <tarball-url> | shasum -a 256
+# Edit Formula/<name>.rb (version + sha256)
+brew reinstall o6uoq/tap/<name>
+brew test o6uoq/tap/<name>
+pre-commit run -a
+```
+
+## 🔑 SHA256 Helper
+
+```bash
+curl -fsSL <tarball-url> | shasum -a 256
 ```

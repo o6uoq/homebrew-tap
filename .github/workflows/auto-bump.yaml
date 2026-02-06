@@ -18,7 +18,7 @@ jobs:
         id: slidev
         run: |
           LATEST=$(curl -s https://api.github.com/repos/slidevjs/slidev/releases/latest | jq -r '.tag_name' | tr -d 'v')
-          CURRENT=$(grep -oP 'cli-\K[0-9]+\.[0-9]+\.[0-9]+(?=\.tgz)' Formula/slidev.rb)
+          CURRENT=$(sed -nE 's#.*cli-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/slidev.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
             SHA=$(curl -sL "https://registry.npmjs.org/@slidev/cli/-/cli-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
             sed -i "s|cli-${CURRENT}.tgz|cli-${LATEST}.tgz|" Formula/slidev.rb
@@ -30,7 +30,7 @@ jobs:
         id: try
         run: |
           LATEST=$(curl -s https://api.github.com/repos/tobi/try/tags | jq -r '.[0].name' | tr -d 'v')
-          CURRENT=$(grep -oP 'tags/v\K[0-9]+\.[0-9]+\.[0-9]+' Formula/try.rb)
+          CURRENT=$(sed -nE 's#.*tags/v([0-9]+\.[0-9]+\.[0-9]+)\.tar\.gz.*#\1#p' Formula/try.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
             SHA=$(curl -sL "https://github.com/tobi/try/archive/refs/tags/v${LATEST}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
             sed -i "s|tags/v${CURRENT}|tags/v${LATEST}|" Formula/try.rb
@@ -38,8 +38,20 @@ jobs:
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check openspec
+        id: openspec
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/Fission-AI/OpenSpec/releases/latest | jq -r '.tag_name' | tr -d 'v')
+          CURRENT=$(sed -nE 's#.*openspec-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/openspec.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            SHA=$(curl -sL "https://registry.npmjs.org/@fission-ai/openspec/-/openspec-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
+            sed -i "s|openspec-${CURRENT}.tgz|openspec-${LATEST}.tgz|" Formula/openspec.rb
+            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/openspec.rb
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create PR
-        if: steps.slidev.outputs.bumped || steps.try.outputs.bumped
+        if: steps.slidev.outputs.bumped || steps.try.outputs.bumped || steps.openspec.outputs.bumped
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "🧹 chore: bump formula versions"
@@ -48,6 +60,7 @@ jobs:
             **Version bumps:**
             ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
             ${{ steps.try.outputs.bumped && format('- try: {0}', steps.try.outputs.bumped) || '' }}
+            ${{ steps.openspec.outputs.bumped && format('- openspec: {0}', steps.openspec.outputs.bumped) || '' }}
 
             @o6uoq
           branch: auto-bump
