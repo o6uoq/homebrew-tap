@@ -21,6 +21,7 @@ brew install o6uoq/tap/slidev
 
 ```bash
 # 1) Create Formula/<name>.rb
+brew create --tap o6uoq/tap --set-name <name> <tarball-url>
 # 2) Validate locally
 brew audit --new --strict o6uoq/tap/<name>
 brew install --build-from-source o6uoq/tap/<name>
