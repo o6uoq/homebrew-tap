@@ -6,6 +6,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
+- [toad](https://github.com/batrachianai/toad) - unified AI interface in your terminal
 - [try](https://github.com/tobi/try) - ephemeral workspace manager
 
 ## 🚀 Install
@@ -15,6 +16,7 @@ brew install o6uoq/tap/<formula>
 # examples:
 brew install o6uoq/tap/openspec
 brew install o6uoq/tap/slidev
+brew install o6uoq/tap/toad
 ```
 
 ## ➕ Add a Formula
