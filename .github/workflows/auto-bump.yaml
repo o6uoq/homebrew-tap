@@ -50,8 +50,20 @@ jobs:
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check toad
+        id: toad
+        run: |
+          LATEST=$(curl -s https://pypi.org/pypi/batrachian-toad/json | jq -r '.info.version')
+          CURRENT=$(sed -nE 's#.*batrachian_toad-([0-9]+\.[0-9]+\.[0-9]+)\.tar\.gz.*#\1#p' Formula/toad.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            SHA=$(curl -sL "https://files.pythonhosted.org/packages/source/b/batrachian-toad/batrachian_toad-${LATEST}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+            sed -i "s|batrachian_toad-${CURRENT}.tar.gz|batrachian_toad-${LATEST}.tar.gz|" Formula/toad.rb
+            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/toad.rb
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create PR
-        if: steps.slidev.outputs.bumped || steps.try.outputs.bumped || steps.openspec.outputs.bumped
+        if: steps.slidev.outputs.bumped || steps.try.outputs.bumped || steps.openspec.outputs.bumped || steps.toad.outputs.bumped
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "🧹 chore: bump formula versions"
@@ -61,6 +73,7 @@ jobs:
             ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
             ${{ steps.try.outputs.bumped && format('- try: {0}', steps.try.outputs.bumped) || '' }}
             ${{ steps.openspec.outputs.bumped && format('- openspec: {0}', steps.openspec.outputs.bumped) || '' }}
+            ${{ steps.toad.outputs.bumped && format('- toad: {0}', steps.toad.outputs.bumped) || '' }}
 
             @o6uoq
           branch: auto-bump
