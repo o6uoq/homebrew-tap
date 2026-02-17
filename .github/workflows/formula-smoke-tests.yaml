@@ -31,15 +31,21 @@ jobs:
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
       TAP_NAME: "local/tap-ci"
+      OFFICIAL_TAP: "${{ github.repository_owner }}/tap"
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6
 
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@04a6d8cfe9d251e2afb78c5bdc6274ec9642aea2
 
       - name: Tap local repository
         run: |
-          brew untap "${TAP_NAME}" || true
+          if brew tap | grep -Fxq "${TAP_NAME}"; then
+            brew untap "${TAP_NAME}"
+          fi
+          if brew tap | grep -Fxq "${OFFICIAL_TAP}"; then
+            brew untap "${OFFICIAL_TAP}"
+          fi
           brew tap "${TAP_NAME}" "${GITHUB_WORKSPACE}"
 
       - name: Install formula
