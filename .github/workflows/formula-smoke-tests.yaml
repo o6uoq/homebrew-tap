@@ -8,26 +8,67 @@ permissions:
   contents: read
 
 jobs:
+  detect:
+    name: Detect changed formulas
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      count: ${{ steps.detect.outputs.count }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build formula matrix
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            CHANGED_FILES="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")"
+          else
+            git fetch --no-tags --depth=1 origin main
+            CHANGED_FILES="$(git diff --name-only origin/main...HEAD)"
+          fi
+
+          ENTRIES=()
+          if grep -qx "Formula/openspec.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}')
+          fi
+          if grep -qx "Formula/slidev.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}')
+          fi
+          if grep -qx "Formula/try.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help"}')
+          fi
+          if grep -qx "Formula/toad.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help"}')
+          fi
+
+          if [ "${#ENTRIES[@]}" -eq 0 ]; then
+            echo 'matrix={"include":[]}' >> "${GITHUB_OUTPUT}"
+            echo 'count=0' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          MATRIX_JSON="{\"include\":["
+          for i in "${!ENTRIES[@]}"; do
+            [ "${i}" -gt 0 ] && MATRIX_JSON+=","
+            MATRIX_JSON+="${ENTRIES[$i]}"
+          done
+          MATRIX_JSON+="]}"
+
+          echo "matrix=${MATRIX_JSON}" >> "${GITHUB_OUTPUT}"
+          echo "count=${#ENTRIES[@]}" >> "${GITHUB_OUTPUT}"
+
   install:
+    needs: detect
+    if: ${{ needs.detect.outputs.count != '0' }}
     name: Install ${{ matrix.formula }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            formula: openspec
-            smoke_cmd: "openspec --help"
-          - os: ubuntu-latest
-            formula: slidev
-            smoke_cmd: "slidev --help"
-          - os: ubuntu-latest
-            formula: try
-            smoke_cmd: "try --help"
-          # toad currently vendors macOS arm64 wheels in resources.
-          - os: macos-latest
-            formula: toad
-            smoke_cmd: "toad --help"
+      matrix: ${{ fromJson(needs.detect.outputs.matrix) }}
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
       TAP_NAME: "${{ github.repository_owner }}/tap"
@@ -46,3 +87,12 @@ jobs:
 
       - name: Run smoke command
         run: ${{ matrix.smoke_cmd }}
+
+  no-changes:
+    name: No formula changes
+    needs: detect
+    if: ${{ needs.detect.outputs.count == '0' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip smoke tests
+        run: echo "No supported formula file changes detected; smoke tests skipped."
