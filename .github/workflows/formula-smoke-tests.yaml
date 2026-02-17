@@ -42,4 +42,4 @@ jobs:
         run: brew install --formula "${TAP_NAME}/${{ matrix.formula }}"
 
       - name: Run formula test block
-        run: brew test "${TAP_NAME}/${{ matrix.formula }}"
+        run: brew test "${{ matrix.formula }}"
