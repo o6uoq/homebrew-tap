@@ -17,21 +17,25 @@ jobs:
         include:
           - os: ubuntu-latest
             formula: openspec
+            smoke_cmd: "openspec --help"
           - os: ubuntu-latest
             formula: slidev
+            smoke_cmd: "slidev --help"
           - os: ubuntu-latest
             formula: try
+            smoke_cmd: "try --help"
           # toad currently vendors macOS arm64 wheels in resources.
           - os: macos-latest
             formula: toad
+            smoke_cmd: "toad --help"
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
       TAP_NAME: "local/tap-ci"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@04a6d8cfe9d251e2afb78c5bdc6274ec9642aea2
 
       - name: Tap local repository
         run: |
@@ -41,5 +45,5 @@ jobs:
       - name: Install formula
         run: brew install --formula "${TAP_NAME}/${{ matrix.formula }}"
 
-      - name: Run formula test block
-        run: brew test "${{ matrix.formula }}"
+      - name: Run smoke command
+        run: ${{ matrix.smoke_cmd }}

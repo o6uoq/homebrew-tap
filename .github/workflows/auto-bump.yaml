@@ -12,7 +12,7 @@ jobs:
   bump:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
 
       - name: Check openspec
         id: openspec
@@ -78,7 +78,7 @@ jobs:
 
       - name: Create PR
         if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@v8.1.0
         with:
           commit-message: "🧹 chore: bump formula versions"
           title: "🧹 Bump formulas"
