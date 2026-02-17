@@ -1,0 +1,39 @@
+name: Formula smoke tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Install ${{ matrix.formula }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            formula: openspec
+          - os: ubuntu-latest
+            formula: slidev
+          - os: ubuntu-latest
+            formula: try
+          # toad currently vendors macOS arm64 wheels in resources.
+          - os: macos-latest
+            formula: toad
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Install formula
+        run: brew install --formula "./Formula/${{ matrix.formula }}.rb"
+
+      - name: Run formula test block
+        run: brew test "${{ matrix.formula }}"

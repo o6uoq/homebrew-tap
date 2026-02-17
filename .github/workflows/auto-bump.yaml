@@ -41,12 +41,26 @@ jobs:
       - name: Check toad
         id: toad
         run: |
-          LATEST=$(curl -s https://pypi.org/pypi/batrachian-toad/json | jq -r '.info.version')
+          PYPI_JSON=$(curl -fsSL https://pypi.org/pypi/batrachian-toad/json)
+          LATEST=$(jq -r '.info.version' <<<"$PYPI_JSON")
           CURRENT=$(sed -nE 's#.*batrachian_toad-([0-9]+\.[0-9]+\.[0-9]+)\.tar\.gz.*#\1#p' Formula/toad.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -sL "https://files.pythonhosted.org/packages/source/b/batrachian-toad/batrachian_toad-${LATEST}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|batrachian_toad-${CURRENT}.tar.gz|batrachian_toad-${LATEST}.tar.gz|" Formula/toad.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/toad.rb
+            URL=$(jq -r '[.urls[] | select(.packagetype == "sdist")][0].url' <<<"$PYPI_JSON")
+            SHA=$(jq -r '[.urls[] | select(.packagetype == "sdist")][0].digests.sha256' <<<"$PYPI_JSON")
+
+            if [ -z "$URL" ] || [ "$URL" = "null" ] || [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
+              echo "Failed to resolve sdist URL or sha256 for batrachian-toad ${LATEST}"
+              exit 1
+            fi
+
+            perl -0i -pe 's#^  url ".*batrachian_toad-[^"]+\.tar\.gz"#  url "'"${URL}"'"#m; s#^  sha256 "[a-f0-9]{64}"#  sha256 "'"${SHA}"'"#m' Formula/toad.rb
+
+            SHA_COUNT=$(grep -c "sha256 \"${SHA}\"" Formula/toad.rb)
+            if [ "$SHA_COUNT" -ne 1 ]; then
+              echo "Unexpected sha256 replacement count for toad: ${SHA_COUNT}"
+              exit 1
+            fi
+
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
 
