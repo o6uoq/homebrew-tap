@@ -29,6 +29,6 @@ class Try < Formula
   end
 
   test do
-    assert_match "try init", shell_output("#{bin}/try --help")
+    assert_match "ephemeral workspace manager", shell_output("#{bin}/try --help")
   end
 end
