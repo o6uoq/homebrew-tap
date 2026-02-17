@@ -37,12 +37,9 @@ jobs:
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@04a6d8cfe9d251e2afb78c5bdc6274ec9642aea2
 
-      - name: Tap local repository
+      - name: Restore checkout after Homebrew setup
         run: |
-          if brew tap | grep -Fxq "${TAP_NAME}"; then
-            brew untap "${TAP_NAME}"
-          fi
-          brew tap "${TAP_NAME}" "${GITHUB_WORKSPACE}"
+          git -C "${GITHUB_WORKSPACE}" checkout --force "${GITHUB_SHA}"
 
       - name: Install formula
         run: brew install --formula "${TAP_NAME}/${{ matrix.formula }}"
