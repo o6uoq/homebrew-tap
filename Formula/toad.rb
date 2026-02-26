@@ -3,8 +3,8 @@ class Toad < Formula
 
   desc "Unified terminal interface for AI coding agents"
   homepage "https://github.com/batrachianai/toad"
-  url "https://files.pythonhosted.org/packages/de/cf/76a26e9b394f1ab0003aacec0638c36814c4a2d1c15aa5cecc717c0f6af2/batrachian_toad-0.6.2.tar.gz"
-  sha256 "4a2ee34f7d09020d95b944be408b78f6b8175331bd7888bedece9aece22e4c2c"
+  url "https://files.pythonhosted.org/packages/e1/3b/e44a63023ee1005b8c0a25236664f7a551b5b1884d472de2924556aec826/batrachian_toad-0.6.3.tar.gz"
+  sha256 "dca79fc65975c6ffd4e2e252fb0e30ecdfc65ce4ff43c56d3fdb9987ab482faa"
   license "MIT"
 
   resource "textual-speedups" do
