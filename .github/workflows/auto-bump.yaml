@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -77,6 +78,7 @@ jobs:
           fi
 
       - name: Create PR
+        id: create_pr
         if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
         uses: peter-evans/create-pull-request@v8.1.0
         with:
@@ -92,3 +94,15 @@ jobs:
             @o6uoq
           branch: auto-bump
           delete-branch: true
+
+      - name: Trigger formula smoke tests for PR branch
+        if: steps.create_pr.outputs.pull-request-operation == 'created' || steps.create_pr.outputs.pull-request-operation == 'updated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Dispatching Formula smoke tests for PR #${{ steps.create_pr.outputs.pull-request-number }} on branch ${{ steps.create_pr.outputs.pull-request-branch }}"
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${{ github.repository }}/actions/workflows/formula-smoke-tests.yaml/dispatches" \
+            -f ref="${{ steps.create_pr.outputs.pull-request-branch }}"
