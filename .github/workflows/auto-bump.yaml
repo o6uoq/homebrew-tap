@@ -5,14 +5,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   bump:
+    # Smoke checks currently max at ~4 minutes; keep a safety buffer while bounding token-bearing runtime.
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Check openspec
         id: openspec
@@ -76,23 +77,37 @@ jobs:
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate PR token configuration
+      - name: Validate GitHub App configuration
         if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
         env:
-          AUTOBUMP_PR_TOKEN: ${{ secrets.AUTOBUMP_PR_TOKEN }}
+          AUTOBUMP_APP_ID: ${{ secrets.AUTOBUMP_APP_ID }}
+          AUTOBUMP_APP_PRIVATE_KEY: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
         run: |
-          if [ -z "${AUTOBUMP_PR_TOKEN}" ]; then
-            echo "::error::Missing AUTOBUMP_PR_TOKEN secret. Configure a fine-grained PAT (contents:write, pull_requests:write) for PR creation so pull_request checks run automatically."
+          if [ -z "${AUTOBUMP_APP_ID}" ] || [ -z "${AUTOBUMP_APP_PRIVATE_KEY}" ]; then
+            echo "::error::Missing AUTOBUMP_APP_ID and/or AUTOBUMP_APP_PRIVATE_KEY secrets."
             exit 1
           fi
+
+      - name: Mint short-lived PR token from GitHub App
+        id: app_token
+        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        with:
+          app-id: ${{ secrets.AUTOBUMP_APP_ID }}
+          private-key: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          skip-token-revoke: false
 
       - name: Create PR
         id: create_pr
         if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
-        uses: peter-evans/create-pull-request@v8.1.0
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
-          # Must use a non-GITHUB_TOKEN token so PR creation triggers pull_request checks.
-          token: ${{ secrets.AUTOBUMP_PR_TOKEN }}
+          # Must use a non-GITHUB_TOKEN actor so PR creation triggers pull_request checks.
+          token: ${{ steps.app_token.outputs.token }}
           commit-message: "🧹 chore: bump formula versions"
           title: "🧹 Bump formulas"
           body: |
