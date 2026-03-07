@@ -39,6 +39,33 @@ jobs:
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check fuzmit
+        id: fuzmit
+        run: |
+          LATEST=$(curl -fsSL https://api.github.com/repos/o6uoq/fuzmit/releases/latest | jq -r '.tag_name' | tr -d 'v')
+          CURRENT=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' Formula/fuzmit.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            DARWIN_AMD64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_amd64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+            DARWIN_ARM64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_arm64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+            LINUX_AMD64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_linux_amd64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+            LINUX_ARM64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_linux_arm64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+
+            perl -0i -pe '
+              s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${LATEST}"'"#m;
+              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_darwin_amd64#fuzmit_'"${LATEST}"'_darwin_amd64#g;
+              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_darwin_arm64#fuzmit_'"${LATEST}"'_darwin_arm64#g;
+              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_amd64#fuzmit_'"${LATEST}"'_linux_amd64#g;
+              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_arm64#fuzmit_'"${LATEST}"'_linux_arm64#g;
+              s#/v[0-9]+\.[0-9]+\.[0-9]+/#/v'"${LATEST}"'/#g;
+              s#(darwin_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${DARWIN_AMD64_SHA}"'"#m;
+              s#(darwin_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${DARWIN_ARM64_SHA}"'"#m;
+              s#(linux_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${LINUX_AMD64_SHA}"'"#m;
+              s#(linux_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${LINUX_ARM64_SHA}"'"#m;
+            ' Formula/fuzmit.rb
+
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check toad
         id: toad
         run: |
@@ -78,7 +105,7 @@ jobs:
           fi
 
       - name: Validate GitHub App configuration
-        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
+        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
         env:
           AUTOBUMP_APP_ID: ${{ secrets.AUTOBUMP_APP_ID }}
           AUTOBUMP_APP_PRIVATE_KEY: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
@@ -90,7 +117,7 @@ jobs:
 
       - name: Mint short-lived PR token from GitHub App
         id: app_token
-        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
+        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.AUTOBUMP_APP_ID }}
@@ -103,7 +130,7 @@ jobs:
 
       - name: Create PR
         id: create_pr
-        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
+        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
           # Must use a non-GITHUB_TOKEN actor so PR creation triggers pull_request checks.
@@ -114,6 +141,7 @@ jobs:
             **Version bumps:**
             ${{ steps.openspec.outputs.bumped && format('- openspec: {0}', steps.openspec.outputs.bumped) || '' }}
             ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
+            ${{ steps.fuzmit.outputs.bumped && format('- fuzmit: {0}', steps.fuzmit.outputs.bumped) || '' }}
             ${{ steps.toad.outputs.bumped && format('- toad: {0}', steps.toad.outputs.bumped) || '' }}
             ${{ steps.try.outputs.bumped && format('- try: {0}', steps.try.outputs.bumped) || '' }}
 

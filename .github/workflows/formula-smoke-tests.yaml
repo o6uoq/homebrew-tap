@@ -35,6 +35,9 @@ jobs:
           if grep -qx "Formula/openspec.rb" <<<"${CHANGED_FILES}"; then
             ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}')
           fi
+          if grep -qx "Formula/fuzmit.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help"}')
+          fi
           if grep -qx "Formula/slidev.rb" <<<"${CHANGED_FILES}"; then
             ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}')
           fi
