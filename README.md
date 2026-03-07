@@ -4,7 +4,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 
 ## 📦 Formulas
 
-- [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits with fuzzy type selection and direct CLI flags
+- [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits, but fuzzy
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
 - [toad](https://github.com/batrachianai/toad) - unified AI interface in your terminal
