@@ -4,6 +4,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 
 ## 📦 Formulas
 
+- [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits with fuzzy type selection and direct CLI flags
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
 - [toad](https://github.com/batrachianai/toad) - unified AI interface in your terminal
@@ -14,6 +15,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 ```bash
 brew install o6uoq/tap/<formula>
 # examples:
+brew install o6uoq/tap/fuzmit
 brew install o6uoq/tap/openspec
 brew install o6uoq/tap/slidev
 brew install o6uoq/tap/toad
