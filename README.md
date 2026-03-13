@@ -7,6 +7,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 - [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits, but fuzzy
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
+- [tmux-ide](https://github.com/wavyrai/tmux-ide) - tmux-powered terminal IDE from `ide.yml`
 - [toad](https://github.com/batrachianai/toad) - unified AI interface in your terminal
 - [try](https://github.com/tobi/try) - ephemeral workspace manager
 
@@ -18,6 +19,7 @@ brew install o6uoq/tap/<formula>
 brew install o6uoq/tap/fuzmit
 brew install o6uoq/tap/openspec
 brew install o6uoq/tap/slidev
+brew install o6uoq/tap/tmux-ide
 brew install o6uoq/tap/toad
 ```
 
