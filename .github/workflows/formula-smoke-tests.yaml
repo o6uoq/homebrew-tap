@@ -47,6 +47,9 @@ jobs:
           if grep -qx "Formula/toad.rb" <<<"${CHANGED_FILES}"; then
             ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help"}')
           fi
+          if grep -qx "Formula/tmux-ide.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version"}')
+          fi
 
           if [ "${#ENTRIES[@]}" -eq 0 ]; then
             echo 'matrix={"include":[]}' >> "${GITHUB_OUTPUT}"
