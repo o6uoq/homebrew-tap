@@ -27,6 +27,18 @@ jobs:
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check skills
+        id: skills
+        run: |
+          LATEST=$(curl -fsSL https://registry.npmjs.org/skills/latest | jq -r '.version')
+          CURRENT=$(sed -nE 's#.*skills-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/skills.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            SHA=$(curl -fsSL "https://registry.npmjs.org/skills/-/skills-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
+            sed -i "s|skills-${CURRENT}.tgz|skills-${LATEST}.tgz|" Formula/skills.rb
+            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/skills.rb
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check slidev
         id: slidev
         run: |
@@ -117,7 +129,7 @@ jobs:
           fi
 
       - name: Validate GitHub App configuration
-        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
         env:
           AUTOBUMP_APP_ID: ${{ secrets.AUTOBUMP_APP_ID }}
           AUTOBUMP_APP_PRIVATE_KEY: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
@@ -129,7 +141,7 @@ jobs:
 
       - name: Mint short-lived PR token from GitHub App
         id: app_token
-        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.AUTOBUMP_APP_ID }}
@@ -142,7 +154,7 @@ jobs:
 
       - name: Create PR
         id: create_pr
-        if: steps.openspec.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
           # Must use a non-GITHUB_TOKEN actor so PR creation triggers pull_request checks.
@@ -152,6 +164,7 @@ jobs:
           body: |
             **Version bumps:**
             ${{ steps.openspec.outputs.bumped && format('- openspec: {0}', steps.openspec.outputs.bumped) || '' }}
+            ${{ steps.skills.outputs.bumped && format('- skills: {0}', steps.skills.outputs.bumped) || '' }}
             ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
             ${{ steps.fuzmit.outputs.bumped && format('- fuzmit: {0}', steps.fuzmit.outputs.bumped) || '' }}
             ${{ steps.toad.outputs.bumped && format('- toad: {0}', steps.toad.outputs.bumped) || '' }}
