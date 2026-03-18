@@ -5,6 +5,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 ## 📦 Formulas
 
 - [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits, but fuzzy
+- [jira-cli](https://github.com/foxythemes/jira-cli) - command-line client for Jira API
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [skills](https://github.com/vercel-labs/skills) - CLI for the open agent skills ecosystem
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
@@ -18,6 +19,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 brew install o6uoq/tap/<formula>
 # examples:
 brew install o6uoq/tap/fuzmit
+brew install o6uoq/tap/jira-cli
 brew install o6uoq/tap/openspec
 brew install o6uoq/tap/skills
 brew install o6uoq/tap/slidev
