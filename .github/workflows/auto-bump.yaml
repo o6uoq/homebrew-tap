@@ -15,6 +15,32 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Check agent-scan
+        id: agent_scan
+        run: |
+          RELEASE_JSON=$(curl -fsSL https://api.github.com/repos/snyk/agent-scan/releases/latest)
+          LATEST=$(jq -r '.tag_name' <<<"$RELEASE_JSON" | tr -d 'v')
+          CURRENT=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' Formula/agent-scan.rb)
+          if [ "$LATEST" != "$CURRENT" ]; then
+            MAC_SHA=$(jq -r --arg ver "$LATEST" '.assets[] | select(.name == ("agent-scan-" + $ver + "-macos-arm64")) | .digest' <<<"$RELEASE_JSON" | sed 's/^sha256://')
+            LINUX_SHA=$(jq -r --arg ver "$LATEST" '.assets[] | select(.name == ("agent-scan-" + $ver + "-linux-x86_64")) | .digest' <<<"$RELEASE_JSON" | sed 's/^sha256://')
+
+            if [ -z "$MAC_SHA" ] || [ -z "$LINUX_SHA" ] || [ "$MAC_SHA" = "null" ] || [ "$LINUX_SHA" = "null" ]; then
+              echo "Failed to resolve release checksums for agent-scan ${LATEST}"
+              exit 1
+            fi
+
+            perl -0i -pe '
+              s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${LATEST}"'"#m;
+              s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-macos-arm64#agent-scan-'"${LATEST}"'-macos-arm64#g;
+              s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-linux-x86_64#agent-scan-'"${LATEST}"'-linux-x86_64#g;
+              s#(macos-arm64"\n      sha256 ")[a-f0-9]{64}"#$1'"${MAC_SHA}"'"#m;
+              s#(linux-x86_64"\n      sha256 ")[a-f0-9]{64}"#$1'"${LINUX_SHA}"'"#m;
+            ' Formula/agent-scan.rb
+
+            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check openspec
         id: openspec
         run: |
@@ -141,7 +167,7 @@ jobs:
           fi
 
       - name: Validate GitHub App configuration
-        if: steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
         env:
           AUTOBUMP_APP_ID: ${{ secrets.AUTOBUMP_APP_ID }}
           AUTOBUMP_APP_PRIVATE_KEY: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
@@ -153,7 +179,7 @@ jobs:
 
       - name: Mint short-lived PR token from GitHub App
         id: app_token
-        if: steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
           app-id: ${{ secrets.AUTOBUMP_APP_ID }}
@@ -166,7 +192,7 @@ jobs:
 
       - name: Create PR
         id: create_pr
-        if: steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
           # Must use a non-GITHUB_TOKEN actor so PR creation triggers pull_request checks.
@@ -175,6 +201,7 @@ jobs:
           title: "🧹 Bump formulas"
           body: |
             **Version bumps:**
+            ${{ steps.agent_scan.outputs.bumped && format('- agent-scan: {0}', steps.agent_scan.outputs.bumped) || '' }}
             ${{ steps.openspec.outputs.bumped && format('- openspec: {0}', steps.openspec.outputs.bumped) || '' }}
             ${{ steps.skills.outputs.bumped && format('- skills: {0}', steps.skills.outputs.bumped) || '' }}
             ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
