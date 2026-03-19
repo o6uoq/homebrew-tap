@@ -32,6 +32,9 @@ jobs:
           fi
 
           ENTRIES=()
+          if grep -qx "Formula/agent-scan.rb" <<<"${CHANGED_FILES}"; then
+            ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help"}')
+          fi
           if grep -qx "Formula/openspec.rb" <<<"${CHANGED_FILES}"; then
             ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}')
           fi
