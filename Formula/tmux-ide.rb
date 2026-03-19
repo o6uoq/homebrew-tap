@@ -3,8 +3,8 @@ require "language/node"
 class TmuxIde < Formula
   desc "Turn any project into a tmux-powered terminal IDE with a simple ide.yml"
   homepage "https://github.com/wavyrai/tmux-ide"
-  url "https://registry.npmjs.org/tmux-ide/-/tmux-ide-1.2.0.tgz"
-  sha256 "ae1e80a0982434483f3b32325428e0476c816a69b76a8147d02458c10f0dd233"
+  url "https://registry.npmjs.org/tmux-ide/-/tmux-ide-1.2.1.tgz"
+  sha256 "53999dc43eff34cf57918914df3cbf9392af126b7b8c1d7d9a6a17e6a9411434"
   license "MIT"
 
   # Tap-only until upstream provides a Homebrew formula.
