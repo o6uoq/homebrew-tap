@@ -6,14 +6,15 @@ class AgentScan < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.4.8/agent-scan-0.4.9-macos-arm64"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.4.9/agent-scan-0.4.9-macos-arm64"
       sha256 "c51281d85efbcef35177fea5089180052b7ba31b6cea08742275c3d86e142650"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.4.8/agent-scan-0.4.9-f1d5fc84fc2571c62eb7eaf97ceb609a49d445171c7e484a84b1b5b6b03ee9b"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.4.9/agent-scan-0.4.9-linux-x86_64"
+      sha256 "8f1d5fc84fc2571c62eb7eaf97ceb609a49d445171c7e484a84b1b5b6b03ee9b"
     end
   end
 
