@@ -32,11 +32,26 @@ jobs:
 
             perl -0i -pe '
               s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${LATEST}"'"#m;
+              s#/releases/download/v[0-9]+\.[0-9]+\.[0-9]+/#/releases/download/v'"${LATEST}"'/#g;
               s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-macos-arm64#agent-scan-'"${LATEST}"'-macos-arm64#g;
               s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-linux-x86_64#agent-scan-'"${LATEST}"'-linux-x86_64#g;
-              s#(macos-arm64"\n      sha256 ")[a-f0-9]{64}"#$1'"${MAC_SHA}"'"#m;
-              s#(linux-x86_64"\n      sha256 ")[a-f0-9]{64}"#$1'"${LINUX_SHA}"'"#m;
+              s#(macos-arm64"\n      sha256 ")[a-f0-9]{64}"#${1}'"${MAC_SHA}"'"#m;
+              s#(linux-x86_64"\n      sha256 ")[a-f0-9]{64}"#${1}'"${LINUX_SHA}"'"#m;
             ' Formula/agent-scan.rb
+
+            MAC_URL_EXPECT="releases/download/v${LATEST}/agent-scan-${LATEST}-macos-arm64"
+            LINUX_URL_EXPECT="releases/download/v${LATEST}/agent-scan-${LATEST}-linux-x86_64"
+            MAC_URL_COUNT=$(grep -F -c "${MAC_URL_EXPECT}" Formula/agent-scan.rb)
+            LINUX_URL_COUNT=$(grep -F -c "${LINUX_URL_EXPECT}" Formula/agent-scan.rb)
+            VERSION_COUNT=$(grep -F -c "version \"${LATEST}\"" Formula/agent-scan.rb)
+            MAC_SHA_COUNT=$(grep -F -c "sha256 \"${MAC_SHA}\"" Formula/agent-scan.rb)
+            LINUX_SHA_COUNT=$(grep -F -c "sha256 \"${LINUX_SHA}\"" Formula/agent-scan.rb)
+
+            if [ "${MAC_URL_COUNT}" -ne 1 ] || [ "${LINUX_URL_COUNT}" -ne 1 ] || [ "${VERSION_COUNT}" -ne 1 ] || [ "${MAC_SHA_COUNT}" -ne 1 ] || [ "${LINUX_SHA_COUNT}" -ne 1 ]; then
+              echo "agent-scan bump rewrite validation failed"
+              echo "MAC_URL_COUNT=${MAC_URL_COUNT} LINUX_URL_COUNT=${LINUX_URL_COUNT} VERSION_COUNT=${VERSION_COUNT} MAC_SHA_COUNT=${MAC_SHA_COUNT} LINUX_SHA_COUNT=${LINUX_SHA_COUNT}"
+              exit 1
+            fi
 
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
