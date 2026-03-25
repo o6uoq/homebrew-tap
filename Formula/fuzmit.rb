@@ -5,20 +5,19 @@
 class Fuzmit < Formula
   desc "Conventional commits with fuzzy type selection and direct CLI flags"
   homepage "https://github.com/o6uoq/fuzmit"
-  version "0.1.0"
+  version "0.1.1"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.0/fuzmit_0.1.0_darwin_amd64.tar.gz"
-      sha256 "56ef82427e4421ff1809da1155b6d09908475ae99ab16f92fa8e0dc830cb7c68"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_darwin_amd64.tar.gz"
+      sha256 "a5f60bb79719f2ee541c8f9500d2b306f6db4f7ec2edcdcaef347b61421060b6"
 
       define_method(:install) do
         bin.install "fuzmit"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.0/fuzmit_0.1.0_darwin_arm64.tar.gz"
-      sha256 "9bcefce797bb78f43d68bca7379491053496e77f6cf1837e69048c95a7bba2f4"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_b6c68c47e8aca55856102573c7ea362ac07e5fe3e1fd89d26bf11e45d80dd"
 
       define_method(:install) do
         bin.install "fuzmit"
@@ -28,15 +27,13 @@ class Fuzmit < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.0/fuzmit_0.1.0_linux_amd64.tar.gz"
-      sha256 "5dbb8b8c29f8c986f94ee6f759927e183a82f062edd7c957b5f37c9feb0b77a7"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_ce8c25212262e85e20eec2b95ef28b907cfd199c74e40fc150efef61ce039"
       define_method(:install) do
         bin.install "fuzmit"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.0/fuzmit_0.1.0_linux_arm64.tar.gz"
-      sha256 "eeb2f2630060fda805ca355e68a349da57bd779053ea0b9084968c577ecb4431"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_dc2568ef24d3f3353b9e3851dc6d2c84d8d0840ece5dc85c20b73676fd2cccd"
       define_method(:install) do
         bin.install "fuzmit"
       end
