@@ -98,10 +98,20 @@ jobs:
           LATEST=$(curl -fsSL https://api.github.com/repos/o6uoq/fuzmit/releases/latest | jq -r '.tag_name' | tr -d 'v')
           CURRENT=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' Formula/fuzmit.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
-            DARWIN_AMD64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_amd64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
-            DARWIN_ARM64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_arm64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
-            LINUX_AMD64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_linux_amd64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
-            LINUX_ARM64_SHA=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/fuzmit_${LATEST}_linux_arm64.tar.gz" | shasum -a 256 | cut -d' ' -f1)
+            CHECKSUMS=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/checksums.txt")
+
+            DARWIN_AMD64_SHA=$(echo "$CHECKSUMS" | grep "darwin_amd64" | cut -d' ' -f1)
+            DARWIN_ARM64_SHA=$(echo "$CHECKSUMS" | grep "darwin_arm64" | cut -d' ' -f1)
+            LINUX_AMD64_SHA=$(echo "$CHECKSUMS" | grep "linux_amd64" | cut -d' ' -f1)
+            LINUX_ARM64_SHA=$(echo "$CHECKSUMS" | grep "linux_arm64" | cut -d' ' -f1)
+
+            for var in DARWIN_AMD64_SHA DARWIN_ARM64_SHA LINUX_AMD64_SHA LINUX_ARM64_SHA; do
+              val="${!var}"
+              if [ -z "$val" ] || ! echo "$val" | grep -qE '^[a-f0-9]{64}$'; then
+                echo "Invalid checksum for ${var}: '${val}'"
+                exit 1
+              fi
+            done
 
             perl -0i -pe '
               s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${LATEST}"'"#m;
