@@ -17,7 +17,8 @@ class Fuzmit < Formula
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_b6c68c47e8aca55856102573c7ea362ac07e5fe3e1fd89d26bf11e45d80dd"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_darwin_arm64.tar.gz"
+      sha256 "774b6c68c47e8aca55856102573c7ea362ac07e5fe3e1fd89d26bf11e45d80dd"
 
       define_method(:install) do
         bin.install "fuzmit"
@@ -27,13 +28,15 @@ class Fuzmit < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_ce8c25212262e85e20eec2b95ef28b907cfd199c74e40fc150efef61ce039"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_linux_amd64.tar.gz"
+      sha256 "013ce8c25212262e85e20eec2b95ef28b907cfd199c74e40fc150efef61ce039"
       define_method(:install) do
         bin.install "fuzmit"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_dc2568ef24d3f3353b9e3851dc6d2c84d8d0840ece5dc85c20b73676fd2cccd"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_linux_arm64.tar.gz"
+      sha256 "4dc2568ef24d3f3353b9e3851dc6d2c84d8d0840ece5dc85c20b73676fd2cccd"
       define_method(:install) do
         bin.install "fuzmit"
       end
