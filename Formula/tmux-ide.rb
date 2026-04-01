@@ -11,7 +11,7 @@ class TmuxIde < Formula
   # Tap-only until upstream provides a Homebrew formula.
 
   depends_on "node"
-  depends_on "bun"
+  depends_on "oven-sh/bun/bun"
   depends_on "tmux"
 
   def install
