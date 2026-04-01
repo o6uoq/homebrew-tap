@@ -7,6 +7,7 @@ class TmuxIde < Formula
   url "https://registry.npmjs.org/tmux-ide/-/tmux-ide-2.0.0.tgz"
   sha256 "28d10432ed9bef4c58bffc67824ddcfc8c9c03c75f8f4f9a33f10582efd09b84"
   license "MIT"
+  preserve_rpath
 
   # Tap-only until upstream provides a Homebrew formula.
 
