@@ -185,12 +185,6 @@ jobs:
           LATEST=$(curl -fsSL https://registry.npmjs.org/tmux-ide/latest | jq -r '.version')
           CURRENT=$(sed -nE 's#.*tmux-ide-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/tmux-ide.rb)
           if [ "$LATEST" != "$CURRENT" ]; then
-            METADATA_JSON=$(curl -fsSL "https://registry.npmjs.org/tmux-ide/${LATEST}")
-            if jq -e '.dependencies // {} | has("@opentui/core-darwin-arm64")' >/dev/null <<<"$METADATA_JSON"; then
-              echo "Skipping tmux-ide ${LATEST}: upstream hard-depends on @opentui/core-darwin-arm64 and fails Linux installs"
-              exit 0
-            fi
-
             SHA=$(curl -fsSL "https://registry.npmjs.org/tmux-ide/-/tmux-ide-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
             sed -i "s|tmux-ide-${CURRENT}.tgz|tmux-ide-${LATEST}.tgz|" Formula/tmux-ide.rb
             sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/tmux-ide.rb
