@@ -23,7 +23,7 @@ class TmuxIde < Formula
     package_json = buildpath/"package.json"
     package = JSON.parse(package_json.read)
     package.fetch("dependencies", {}).delete("@opentui/core-darwin-arm64")
-    package_json.write("#{JSON.pretty_generate(package)}\n")
+    package_json.atomic_write("#{JSON.pretty_generate(package)}\n")
 
     system "npm", "install", *std_npm_args
     bin.install_symlink libexec.glob("bin/*")
