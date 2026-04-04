@@ -205,7 +205,7 @@ jobs:
       - name: Mint short-lived PR token from GitHub App
         id: app_token
         if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
         with:
           app-id: ${{ secrets.AUTOBUMP_APP_ID }}
           private-key: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
