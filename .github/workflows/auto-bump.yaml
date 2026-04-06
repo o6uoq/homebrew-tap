@@ -152,11 +152,31 @@ jobs:
               s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_amd64#fuzmit_'"${LATEST}"'_linux_amd64#g;
               s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_arm64#fuzmit_'"${LATEST}"'_linux_arm64#g;
               s#/v[0-9]+\.[0-9]+\.[0-9]+/#/v'"${LATEST}"'/#g;
-              s#(darwin_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${DARWIN_AMD64_SHA}"'"#m;
-              s#(darwin_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${DARWIN_ARM64_SHA}"'"#m;
-              s#(linux_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${LINUX_AMD64_SHA}"'"#m;
-              s#(linux_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#$1'"${LINUX_ARM64_SHA}"'"#m;
+              s#(darwin_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${DARWIN_AMD64_SHA}"'"#m;
+              s#(darwin_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${DARWIN_ARM64_SHA}"'"#m;
+              s#(linux_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${LINUX_AMD64_SHA}"'"#m;
+              s#(linux_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${LINUX_ARM64_SHA}"'"#m;
             ' Formula/fuzmit.rb
+
+            DARWIN_AMD64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_amd64.tar.gz"
+            DARWIN_ARM64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_arm64.tar.gz"
+            LINUX_AMD64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_linux_amd64.tar.gz"
+            LINUX_ARM64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_linux_arm64.tar.gz"
+            VERSION_COUNT=$(grep -F -c "version \"${LATEST}\"" Formula/fuzmit.rb)
+            DARWIN_AMD64_URL_COUNT=$(grep -F -c "${DARWIN_AMD64_URL_EXPECT}" Formula/fuzmit.rb)
+            DARWIN_ARM64_URL_COUNT=$(grep -F -c "${DARWIN_ARM64_URL_EXPECT}" Formula/fuzmit.rb)
+            LINUX_AMD64_URL_COUNT=$(grep -F -c "${LINUX_AMD64_URL_EXPECT}" Formula/fuzmit.rb)
+            LINUX_ARM64_URL_COUNT=$(grep -F -c "${LINUX_ARM64_URL_EXPECT}" Formula/fuzmit.rb)
+            DARWIN_AMD64_SHA_COUNT=$(grep -F -c "sha256 \"${DARWIN_AMD64_SHA}\"" Formula/fuzmit.rb)
+            DARWIN_ARM64_SHA_COUNT=$(grep -F -c "sha256 \"${DARWIN_ARM64_SHA}\"" Formula/fuzmit.rb)
+            LINUX_AMD64_SHA_COUNT=$(grep -F -c "sha256 \"${LINUX_AMD64_SHA}\"" Formula/fuzmit.rb)
+            LINUX_ARM64_SHA_COUNT=$(grep -F -c "sha256 \"${LINUX_ARM64_SHA}\"" Formula/fuzmit.rb)
+
+            if [ "${VERSION_COUNT}" -ne 1 ] || [ "${DARWIN_AMD64_URL_COUNT}" -ne 1 ] || [ "${DARWIN_ARM64_URL_COUNT}" -ne 1 ] || [ "${LINUX_AMD64_URL_COUNT}" -ne 1 ] || [ "${LINUX_ARM64_URL_COUNT}" -ne 1 ] || [ "${DARWIN_AMD64_SHA_COUNT}" -ne 1 ] || [ "${DARWIN_ARM64_SHA_COUNT}" -ne 1 ] || [ "${LINUX_AMD64_SHA_COUNT}" -ne 1 ] || [ "${LINUX_ARM64_SHA_COUNT}" -ne 1 ]; then
+              echo "fuzmit bump rewrite validation failed"
+              echo "VERSION_COUNT=${VERSION_COUNT} DARWIN_AMD64_URL_COUNT=${DARWIN_AMD64_URL_COUNT} DARWIN_ARM64_URL_COUNT=${DARWIN_ARM64_URL_COUNT} LINUX_AMD64_URL_COUNT=${LINUX_AMD64_URL_COUNT} LINUX_ARM64_URL_COUNT=${LINUX_ARM64_URL_COUNT} DARWIN_AMD64_SHA_COUNT=${DARWIN_AMD64_SHA_COUNT} DARWIN_ARM64_SHA_COUNT=${DARWIN_ARM64_SHA_COUNT} LINUX_AMD64_SHA_COUNT=${LINUX_AMD64_SHA_COUNT} LINUX_ARM64_SHA_COUNT=${LINUX_ARM64_SHA_COUNT}"
+              exit 1
+            fi
 
             echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
           fi
