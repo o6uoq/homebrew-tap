@@ -5,20 +5,20 @@
 class Fuzmit < Formula
   desc "Conventional commits with fuzzy type selection and direct CLI flags"
   homepage "https://github.com/o6uoq/fuzmit"
-  version "0.1.1"
+  version "0.1.2"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_darwin_amd64.tar.gz"
-      sha256 "a5f60bb79719f2ee541c8f9500d2b306f6db4f7ec2edcdcaef347b61421060b6"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.2/fuzmit_0.1.2_darwin_amd64.tar.gz"
+      sha256 "f399346ffa071a63b1fa7ec8a2062acfc0bdd08f8cbceae3a1da5fb436cd955d"
 
       define_method(:install) do
         bin.install "fuzmit"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_darwin_arm64.tar.gz"
-      sha256 "774b6c68c47e8aca55856102573c7ea362ac07e5fe3e1fd89d26bf11e45d80dd"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.2/fuzmit_0.1.2_darwin_arm64.tar.gz"
+      sha256 "be6b30ca758fedfbe1f75c558fca44962f14abb6171ed0d3dac702dc51edbefa"
 
       define_method(:install) do
         bin.install "fuzmit"
@@ -28,15 +28,15 @@ class Fuzmit < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_linux_amd64.tar.gz"
-      sha256 "013ce8c25212262e85e20eec2b95ef28b907cfd199c74e40fc150efef61ce039"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.2/fuzmit_0.1.2_linux_amd64.tar.gz"
+      sha256 "3c28e051fd88f4bbab1685a9441eb09d93bc4f9953593d28bb38b8c625739da0"
       define_method(:install) do
         bin.install "fuzmit"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.1/fuzmit_0.1.1_linux_arm64.tar.gz"
-      sha256 "4dc2568ef24d3f3353b9e3851dc6d2c84d8d0840ece5dc85c20b73676fd2cccd"
+      url "https://github.com/o6uoq/fuzmit/releases/download/v0.1.2/fuzmit_0.1.2_linux_arm64.tar.gz"
+      sha256 "38fa508019a041043ca79141e6e71de2ef584d6b60d5f682adffddc68df0f882"
       define_method(:install) do
         bin.install "fuzmit"
       end
