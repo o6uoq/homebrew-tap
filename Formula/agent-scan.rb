@@ -1,20 +1,20 @@
 class AgentScan < Formula
   desc "Security scanner for agents, MCP servers, and skills"
   homepage "https://github.com/snyk/agent-scan"
-  version "0.4.13"
+  version "0.4.14"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.4.13/agent-scan-0.4.13-macos-arm64"
-      sha256 "c33343923225ff980f5653cdaaff6e96dd5a19fbfbd94b8bb535c8cf21b8b388"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.4.14/agent-scan-0.4.14-macos-arm64"
+      sha256 "9cedd40ca018240d2c21dd4d92550dbf3b1fcce21aa095c2607d3a322f10aef6"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.4.13/agent-scan-0.4.13-linux-x86_64"
-      sha256 "899a77c35a6c8428ef9b9cba62258716323889bfdd4510f7453ca04c919ede84"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.4.14/agent-scan-0.4.14-linux-x86_64"
+      sha256 "d584d198b8e99125bbd860331dec23ecf708bc44682665edf7fbacf6f100cd61"
     end
   end
 
