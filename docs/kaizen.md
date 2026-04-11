@@ -1,0 +1,1 @@
+2026-04-11 | packaging/ci | Added new tap formula with autobump wiring | Used npm package identity (`paperclipai`) while keeping formula identity (`paperclip`) for user-facing consistency → reuse this mapping pattern for npm packages whose CLI/package/repo names differ
