@@ -12,7 +12,9 @@ class Paperclip < Formula
   depends_on "node"
 
   def install
-    system "npm", "install", *std_npm_args
+    # paperclipai and @paperclipai/server are released in lockstep; bypass npm age
+    # gating so same-version dependency resolution does not fail during rollout.
+    system "npm", "install", *std_npm_args, "--min-release-age=0"
     bin.install_symlink libexec.glob("bin/*")
   end
 
