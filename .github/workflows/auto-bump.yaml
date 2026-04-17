@@ -9,11 +9,33 @@ permissions:
 
 jobs:
   bump:
-    # Smoke checks currently max at ~4 minutes; keep a safety buffer while bounding token-bearing runtime.
-    timeout-minutes: 10
+    # npm preflight checks for min-release-age compliance can extend runtime when multiple bumps are eligible.
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Resolve npm min-release-age policy
+        id: npm_policy
+        run: |
+          NODE_HELPER_SOURCE=$(curl -fsSL https://raw.githubusercontent.com/Homebrew/brew/HEAD/Library/Homebrew/language/node.rb)
+          MIN_RELEASE_AGE_DAYS=$(sed -nE 's/.*--min-release-age=([0-9]+).*/\1/p' <<<"$NODE_HELPER_SOURCE" | head -n 1)
+
+          if [ -z "$MIN_RELEASE_AGE_DAYS" ] || ! [[ "$MIN_RELEASE_AGE_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "Failed to resolve Homebrew npm --min-release-age policy."
+            exit 1
+          fi
+
+          echo "days=${MIN_RELEASE_AGE_DAYS}" >> "$GITHUB_OUTPUT"
+          echo "Resolved Homebrew npm min-release-age=${MIN_RELEASE_AGE_DAYS} day(s)."
+
+      - name: Validate npm min-release-age support
+        run: |
+          if ! npm config ls -l | grep -q '^min-release-age = '; then
+            echo "Runner npm does not expose min-release-age; cannot enforce Homebrew policy."
+            npm --version
+            exit 1
+          fi
 
       - name: Check agent-scan
         id: agent_scan
@@ -58,83 +80,27 @@ jobs:
 
       - name: Check openspec
         id: openspec
-        run: |
-          LATEST=$(curl -s https://api.github.com/repos/Fission-AI/OpenSpec/releases/latest | jq -r '.tag_name' | tr -d 'v')
-          CURRENT=$(sed -nE 's#.*openspec-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/openspec.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -sL "https://registry.npmjs.org/@fission-ai/openspec/-/openspec-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|openspec-${CURRENT}.tgz|openspec-${LATEST}.tgz|" Formula/openspec.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/openspec.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
+        env:
+          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
+        run: ./scripts/bump-npm-formula.sh Formula/openspec.rb @fission-ai/openspec
 
       - name: Check paperclip
         id: paperclip
-        run: |
-          LATEST=$(curl -fsSL https://registry.npmjs.org/paperclipai/latest | jq -r '.version')
-          CURRENT=$(sed -nE 's#.*paperclipai-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/paperclip.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -fsSL "https://registry.npmjs.org/paperclipai/-/paperclipai-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|paperclipai-${CURRENT}.tgz|paperclipai-${LATEST}.tgz|" Formula/paperclip.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/paperclip.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
+        env:
+          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
+        run: ./scripts/bump-npm-formula.sh Formula/paperclip.rb paperclipai
 
       - name: Check skills
         id: skills
-        run: |
-          LATEST=$(curl -fsSL https://registry.npmjs.org/skills/latest | jq -r '.version')
-          CURRENT=$(sed -nE 's#.*skills-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/skills.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -fsSL "https://registry.npmjs.org/skills/-/skills-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|skills-${CURRENT}.tgz|skills-${LATEST}.tgz|" Formula/skills.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/skills.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
+        env:
+          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
+        run: ./scripts/bump-npm-formula.sh Formula/skills.rb skills
 
       - name: Check slidev
         id: slidev
-        run: |
-          CLI_JSON=$(curl -fsSL https://registry.npmjs.org/@slidev/cli)
-          LATEST=$(jq -r '.["dist-tags"].latest' <<<"$CLI_JSON")
-          CURRENT=$(sed -nE 's#.*cli-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/slidev.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            PUBLISHED_AT=$(jq -r --arg ver "$LATEST" '.time[$ver] // empty' <<<"$CLI_JSON")
-            if [ -z "$PUBLISHED_AT" ] || [ "$PUBLISHED_AT" = "null" ]; then
-              echo "Failed to resolve publish timestamp for @slidev/cli ${LATEST}"
-              exit 1
-            fi
-
-            # Homebrew npm install now enforces --min-release-age=1. Gate bumps until npm metadata is old enough.
-            PUBLISHED_EPOCH=$(date -u -d "$PUBLISHED_AT" +%s)
-            CLIENT_VERSION=$(jq -r --arg ver "$LATEST" '.versions[$ver].dependencies["@slidev/client"] // empty' <<<"$CLI_JSON")
-            if [[ "$CLIENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              CLIENT_PUBLISHED_AT=$(curl -fsSL https://registry.npmjs.org/@slidev/client | jq -r --arg ver "$CLIENT_VERSION" '.time[$ver] // empty')
-              if [ -z "$CLIENT_PUBLISHED_AT" ] || [ "$CLIENT_PUBLISHED_AT" = "null" ]; then
-                echo "Failed to resolve publish timestamp for @slidev/client ${CLIENT_VERSION}"
-                exit 1
-              fi
-              CLIENT_PUBLISHED_EPOCH=$(date -u -d "$CLIENT_PUBLISHED_AT" +%s)
-              if [ "$CLIENT_PUBLISHED_EPOCH" -gt "$PUBLISHED_EPOCH" ]; then
-                PUBLISHED_EPOCH=$CLIENT_PUBLISHED_EPOCH
-                PUBLISHED_AT=$CLIENT_PUBLISHED_AT
-              fi
-            fi
-
-            MIN_AGE_SECONDS=$((26 * 60 * 60))
-            NOW_EPOCH=$(date -u +%s)
-            AGE_SECONDS=$((NOW_EPOCH - PUBLISHED_EPOCH))
-            if [ "$AGE_SECONDS" -lt "$MIN_AGE_SECONDS" ]; then
-              REMAINING_HOURS=$(((MIN_AGE_SECONDS - AGE_SECONDS + 3599) / 3600))
-              echo "Skipping slidev ${LATEST}: npm publish age is ${AGE_SECONDS}s (< ${MIN_AGE_SECONDS}s). Retry in ~${REMAINING_HOURS}h."
-              exit 0
-            fi
-
-            SHA=$(curl -sL "https://registry.npmjs.org/@slidev/cli/-/cli-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|cli-${CURRENT}.tgz|cli-${LATEST}.tgz|" Formula/slidev.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/slidev.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
+        env:
+          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
+        run: ./scripts/bump-npm-formula.sh Formula/slidev.rb @slidev/cli
 
       - name: Check fuzmit
         id: fuzmit
@@ -195,15 +161,9 @@ jobs:
 
       - name: Check jira-cli
         id: jira_cli
-        run: |
-          LATEST=$(curl -fsSL https://registry.npmjs.org/jira-cl/latest | jq -r '.version')
-          CURRENT=$(sed -nE 's#.*jira-cl-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/jira-cli.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -fsSL "https://registry.npmjs.org/jira-cl/-/jira-cl-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|jira-cl-${CURRENT}.tgz|jira-cl-${LATEST}.tgz|" Formula/jira-cli.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/jira-cli.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
+        env:
+          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
+        run: ./scripts/bump-npm-formula.sh Formula/jira-cli.rb jira-cl
 
       - name: Check toad
         id: toad
@@ -245,15 +205,9 @@ jobs:
 
       - name: Check tmux-ide
         id: tmux_ide
-        run: |
-          LATEST=$(curl -fsSL https://registry.npmjs.org/tmux-ide/latest | jq -r '.version')
-          CURRENT=$(sed -nE 's#.*tmux-ide-([0-9]+\.[0-9]+\.[0-9]+)\.tgz.*#\1#p' Formula/tmux-ide.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -fsSL "https://registry.npmjs.org/tmux-ide/-/tmux-ide-${LATEST}.tgz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|tmux-ide-${CURRENT}.tgz|tmux-ide-${LATEST}.tgz|" Formula/tmux-ide.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/tmux-ide.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
+        env:
+          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
+        run: ./scripts/bump-npm-formula.sh Formula/tmux-ide.rb tmux-ide
 
       - name: Validate GitHub App configuration
         if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.paperclip.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
