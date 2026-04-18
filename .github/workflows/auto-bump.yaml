@@ -20,202 +20,12 @@ jobs:
         with:
           node-version: 24
 
-      - name: Resolve npm min-release-age policy
-        id: npm_policy
-        run: |
-          NODE_HELPER_SOURCE=$(curl -fsSL https://raw.githubusercontent.com/Homebrew/brew/HEAD/Library/Homebrew/language/node.rb)
-          MIN_RELEASE_AGE_DAYS=$(sed -nE 's/.*--min-release-age=([0-9]+).*/\1/p' <<<"$NODE_HELPER_SOURCE" | head -n 1)
-
-          if [ -z "$MIN_RELEASE_AGE_DAYS" ] || ! [[ "$MIN_RELEASE_AGE_DAYS" =~ ^[0-9]+$ ]]; then
-            echo "Failed to resolve Homebrew npm --min-release-age policy."
-            exit 1
-          fi
-
-          echo "days=${MIN_RELEASE_AGE_DAYS}" >> "$GITHUB_OUTPUT"
-          echo "Resolved Homebrew npm min-release-age=${MIN_RELEASE_AGE_DAYS} day(s)."
-
-      - name: Validate npm min-release-age support
-        run: |
-          if ! npm config ls -l | grep -q '^min-release-age = '; then
-            echo "Runner npm does not expose min-release-age; cannot enforce Homebrew policy."
-            npm --version
-            exit 1
-          fi
-
-      - name: Check agent-scan
-        id: agent_scan
-        run: |
-          RELEASE_JSON=$(curl -fsSL https://api.github.com/repos/snyk/agent-scan/releases/latest)
-          LATEST=$(jq -r '.tag_name' <<<"$RELEASE_JSON" | tr -d 'v')
-          CURRENT=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' Formula/agent-scan.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            MAC_SHA=$(jq -r --arg ver "$LATEST" '.assets[] | select(.name == ("agent-scan-" + $ver + "-macos-arm64")) | .digest' <<<"$RELEASE_JSON" | sed 's/^sha256://')
-            LINUX_SHA=$(jq -r --arg ver "$LATEST" '.assets[] | select(.name == ("agent-scan-" + $ver + "-linux-x86_64")) | .digest' <<<"$RELEASE_JSON" | sed 's/^sha256://')
-
-            if [ -z "$MAC_SHA" ] || [ -z "$LINUX_SHA" ] || [ "$MAC_SHA" = "null" ] || [ "$LINUX_SHA" = "null" ]; then
-              echo "Failed to resolve release checksums for agent-scan ${LATEST}"
-              exit 1
-            fi
-
-            perl -0i -pe '
-              s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${LATEST}"'"#m;
-              s#/releases/download/v[0-9]+\.[0-9]+\.[0-9]+/#/releases/download/v'"${LATEST}"'/#g;
-              s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-macos-arm64#agent-scan-'"${LATEST}"'-macos-arm64#g;
-              s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-linux-x86_64#agent-scan-'"${LATEST}"'-linux-x86_64#g;
-              s#(macos-arm64"\n      sha256 ")[a-f0-9]{64}"#${1}'"${MAC_SHA}"'"#m;
-              s#(linux-x86_64"\n      sha256 ")[a-f0-9]{64}"#${1}'"${LINUX_SHA}"'"#m;
-            ' Formula/agent-scan.rb
-
-            MAC_URL_EXPECT="releases/download/v${LATEST}/agent-scan-${LATEST}-macos-arm64"
-            LINUX_URL_EXPECT="releases/download/v${LATEST}/agent-scan-${LATEST}-linux-x86_64"
-            MAC_URL_COUNT=$(grep -F -c "${MAC_URL_EXPECT}" Formula/agent-scan.rb)
-            LINUX_URL_COUNT=$(grep -F -c "${LINUX_URL_EXPECT}" Formula/agent-scan.rb)
-            VERSION_COUNT=$(grep -F -c "version \"${LATEST}\"" Formula/agent-scan.rb)
-            MAC_SHA_COUNT=$(grep -F -c "sha256 \"${MAC_SHA}\"" Formula/agent-scan.rb)
-            LINUX_SHA_COUNT=$(grep -F -c "sha256 \"${LINUX_SHA}\"" Formula/agent-scan.rb)
-
-            if [ "${MAC_URL_COUNT}" -ne 1 ] || [ "${LINUX_URL_COUNT}" -ne 1 ] || [ "${VERSION_COUNT}" -ne 1 ] || [ "${MAC_SHA_COUNT}" -ne 1 ] || [ "${LINUX_SHA_COUNT}" -ne 1 ]; then
-              echo "agent-scan bump rewrite validation failed"
-              echo "MAC_URL_COUNT=${MAC_URL_COUNT} LINUX_URL_COUNT=${LINUX_URL_COUNT} VERSION_COUNT=${VERSION_COUNT} MAC_SHA_COUNT=${MAC_SHA_COUNT} LINUX_SHA_COUNT=${LINUX_SHA_COUNT}"
-              exit 1
-            fi
-
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check openspec
-        id: openspec
-        env:
-          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
-        run: ./scripts/bump-npm-formula.sh Formula/openspec.rb @fission-ai/openspec
-
-      - name: Check paperclip
-        id: paperclip
-        env:
-          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
-        run: ./scripts/bump-npm-formula.sh Formula/paperclip.rb paperclipai
-
-      - name: Check skills
-        id: skills
-        env:
-          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
-        run: ./scripts/bump-npm-formula.sh Formula/skills.rb skills
-
-      - name: Check slidev
-        id: slidev
-        env:
-          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
-        run: ./scripts/bump-npm-formula.sh Formula/slidev.rb @slidev/cli
-
-      - name: Check fuzmit
-        id: fuzmit
-        run: |
-          LATEST=$(curl -fsSL https://api.github.com/repos/o6uoq/fuzmit/releases/latest | jq -r '.tag_name' | tr -d 'v')
-          CURRENT=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' Formula/fuzmit.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            CHECKSUMS=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${LATEST}/checksums.txt")
-
-            DARWIN_AMD64_SHA=$(echo "$CHECKSUMS" | grep "darwin_amd64" | cut -d' ' -f1)
-            DARWIN_ARM64_SHA=$(echo "$CHECKSUMS" | grep "darwin_arm64" | cut -d' ' -f1)
-            LINUX_AMD64_SHA=$(echo "$CHECKSUMS" | grep "linux_amd64" | cut -d' ' -f1)
-            LINUX_ARM64_SHA=$(echo "$CHECKSUMS" | grep "linux_arm64" | cut -d' ' -f1)
-
-            for var in DARWIN_AMD64_SHA DARWIN_ARM64_SHA LINUX_AMD64_SHA LINUX_ARM64_SHA; do
-              val="${!var}"
-              if [ -z "$val" ] || ! echo "$val" | grep -qE '^[a-f0-9]{64}$'; then
-                echo "Invalid checksum for ${var}: '${val}'"
-                exit 1
-              fi
-            done
-
-            perl -0i -pe '
-              s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${LATEST}"'"#m;
-              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_darwin_amd64#fuzmit_'"${LATEST}"'_darwin_amd64#g;
-              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_darwin_arm64#fuzmit_'"${LATEST}"'_darwin_arm64#g;
-              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_amd64#fuzmit_'"${LATEST}"'_linux_amd64#g;
-              s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_arm64#fuzmit_'"${LATEST}"'_linux_arm64#g;
-              s#/v[0-9]+\.[0-9]+\.[0-9]+/#/v'"${LATEST}"'/#g;
-              s#(darwin_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${DARWIN_AMD64_SHA}"'"#m;
-              s#(darwin_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${DARWIN_ARM64_SHA}"'"#m;
-              s#(linux_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${LINUX_AMD64_SHA}"'"#m;
-              s#(linux_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${LINUX_ARM64_SHA}"'"#m;
-            ' Formula/fuzmit.rb
-
-            DARWIN_AMD64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_amd64.tar.gz"
-            DARWIN_ARM64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_darwin_arm64.tar.gz"
-            LINUX_AMD64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_linux_amd64.tar.gz"
-            LINUX_ARM64_URL_EXPECT="releases/download/v${LATEST}/fuzmit_${LATEST}_linux_arm64.tar.gz"
-            VERSION_COUNT=$(grep -F -c "version \"${LATEST}\"" Formula/fuzmit.rb)
-            DARWIN_AMD64_URL_COUNT=$(grep -F -c "${DARWIN_AMD64_URL_EXPECT}" Formula/fuzmit.rb)
-            DARWIN_ARM64_URL_COUNT=$(grep -F -c "${DARWIN_ARM64_URL_EXPECT}" Formula/fuzmit.rb)
-            LINUX_AMD64_URL_COUNT=$(grep -F -c "${LINUX_AMD64_URL_EXPECT}" Formula/fuzmit.rb)
-            LINUX_ARM64_URL_COUNT=$(grep -F -c "${LINUX_ARM64_URL_EXPECT}" Formula/fuzmit.rb)
-            DARWIN_AMD64_SHA_COUNT=$(grep -F -c "sha256 \"${DARWIN_AMD64_SHA}\"" Formula/fuzmit.rb)
-            DARWIN_ARM64_SHA_COUNT=$(grep -F -c "sha256 \"${DARWIN_ARM64_SHA}\"" Formula/fuzmit.rb)
-            LINUX_AMD64_SHA_COUNT=$(grep -F -c "sha256 \"${LINUX_AMD64_SHA}\"" Formula/fuzmit.rb)
-            LINUX_ARM64_SHA_COUNT=$(grep -F -c "sha256 \"${LINUX_ARM64_SHA}\"" Formula/fuzmit.rb)
-
-            if [ "${VERSION_COUNT}" -ne 1 ] || [ "${DARWIN_AMD64_URL_COUNT}" -ne 1 ] || [ "${DARWIN_ARM64_URL_COUNT}" -ne 1 ] || [ "${LINUX_AMD64_URL_COUNT}" -ne 1 ] || [ "${LINUX_ARM64_URL_COUNT}" -ne 1 ] || [ "${DARWIN_AMD64_SHA_COUNT}" -ne 1 ] || [ "${DARWIN_ARM64_SHA_COUNT}" -ne 1 ] || [ "${LINUX_AMD64_SHA_COUNT}" -ne 1 ] || [ "${LINUX_ARM64_SHA_COUNT}" -ne 1 ]; then
-              echo "fuzmit bump rewrite validation failed"
-              echo "VERSION_COUNT=${VERSION_COUNT} DARWIN_AMD64_URL_COUNT=${DARWIN_AMD64_URL_COUNT} DARWIN_ARM64_URL_COUNT=${DARWIN_ARM64_URL_COUNT} LINUX_AMD64_URL_COUNT=${LINUX_AMD64_URL_COUNT} LINUX_ARM64_URL_COUNT=${LINUX_ARM64_URL_COUNT} DARWIN_AMD64_SHA_COUNT=${DARWIN_AMD64_SHA_COUNT} DARWIN_ARM64_SHA_COUNT=${DARWIN_ARM64_SHA_COUNT} LINUX_AMD64_SHA_COUNT=${LINUX_AMD64_SHA_COUNT} LINUX_ARM64_SHA_COUNT=${LINUX_ARM64_SHA_COUNT}"
-              exit 1
-            fi
-
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check jira-cli
-        id: jira_cli
-        env:
-          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
-        run: ./scripts/bump-npm-formula.sh Formula/jira-cli.rb jira-cl
-
-      - name: Check toad
-        id: toad
-        run: |
-          PYPI_JSON=$(curl -fsSL https://pypi.org/pypi/batrachian-toad/json)
-          LATEST=$(jq -r '.info.version' <<<"$PYPI_JSON")
-          CURRENT=$(sed -nE 's#.*batrachian_toad-([0-9]+\.[0-9]+\.[0-9]+)\.tar\.gz.*#\1#p' Formula/toad.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            URL=$(jq -r '[.urls[] | select(.packagetype == "sdist")][0].url' <<<"$PYPI_JSON")
-            SHA=$(jq -r '[.urls[] | select(.packagetype == "sdist")][0].digests.sha256' <<<"$PYPI_JSON")
-
-            if [ -z "$URL" ] || [ "$URL" = "null" ] || [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
-              echo "Failed to resolve sdist URL or sha256 for batrachian-toad ${LATEST}"
-              exit 1
-            fi
-
-            perl -0i -pe 's#^  url ".*batrachian_toad-[^"]+\.tar\.gz"#  url "'"${URL}"'"#m; s#^  sha256 "[a-f0-9]{64}"#  sha256 "'"${SHA}"'"#m' Formula/toad.rb
-
-            SHA_COUNT=$(grep -c "sha256 \"${SHA}\"" Formula/toad.rb)
-            if [ "$SHA_COUNT" -ne 1 ]; then
-              echo "Unexpected sha256 replacement count for toad: ${SHA_COUNT}"
-              exit 1
-            fi
-
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check try
-        id: try
-        run: |
-          LATEST=$(curl -s https://api.github.com/repos/tobi/try/tags | jq -r '.[0].name' | tr -d 'v')
-          CURRENT=$(sed -nE 's#.*tags/v([0-9]+\.[0-9]+\.[0-9]+)\.tar\.gz.*#\1#p' Formula/try.rb)
-          if [ "$LATEST" != "$CURRENT" ]; then
-            SHA=$(curl -sL "https://github.com/tobi/try/archive/refs/tags/v${LATEST}.tar.gz" | shasum -a 256 | cut -d' ' -f1)
-            sed -i "s|tags/v${CURRENT}|tags/v${LATEST}|" Formula/try.rb
-            sed -i "s|sha256 \"[a-f0-9]*\"|sha256 \"${SHA}\"|" Formula/try.rb
-            echo "bumped=${CURRENT} → ${LATEST}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check tmux-ide
-        id: tmux_ide
-        env:
-          MIN_RELEASE_AGE_DAYS: ${{ steps.npm_policy.outputs.days }}
-        run: ./scripts/bump-npm-formula.sh Formula/tmux-ide.rb tmux-ide
+      - name: Run auto-bump
+        id: autobump
+        run: ./scripts/auto-bump.sh
 
       - name: Validate GitHub App configuration
-        if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.paperclip.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.autobump.outputs.changed == 'true'
         env:
           AUTOBUMP_APP_ID: ${{ secrets.AUTOBUMP_APP_ID }}
           AUTOBUMP_APP_PRIVATE_KEY: ${{ secrets.AUTOBUMP_APP_PRIVATE_KEY }}
@@ -227,7 +37,7 @@ jobs:
 
       - name: Mint short-lived PR token from GitHub App
         id: app_token
-        if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.paperclip.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.autobump.outputs.changed == 'true'
         uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
         with:
           app-id: ${{ secrets.AUTOBUMP_APP_ID }}
@@ -240,26 +50,15 @@ jobs:
 
       - name: Create PR
         id: create_pr
-        if: steps.agent_scan.outputs.bumped || steps.openspec.outputs.bumped || steps.paperclip.outputs.bumped || steps.skills.outputs.bumped || steps.slidev.outputs.bumped || steps.fuzmit.outputs.bumped || steps.jira_cli.outputs.bumped || steps.toad.outputs.bumped || steps.try.outputs.bumped || steps.tmux_ide.outputs.bumped
+        if: steps.autobump.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
           # Must use a non-GITHUB_TOKEN actor so PR creation triggers pull_request checks.
           token: ${{ steps.app_token.outputs.token }}
           commit-message: "🧹 chore: bump formula versions"
+          committer: "David Dolph <1227896+o6uoq@users.noreply.github.com>"
+          author: "David Dolph <1227896+o6uoq@users.noreply.github.com>"
           title: "🧹 Bump formulas"
-          body: |
-            **Version bumps:**
-            ${{ steps.agent_scan.outputs.bumped && format('- agent-scan: {0}', steps.agent_scan.outputs.bumped) || '' }}
-            ${{ steps.openspec.outputs.bumped && format('- openspec: {0}', steps.openspec.outputs.bumped) || '' }}
-            ${{ steps.paperclip.outputs.bumped && format('- paperclip: {0}', steps.paperclip.outputs.bumped) || '' }}
-            ${{ steps.skills.outputs.bumped && format('- skills: {0}', steps.skills.outputs.bumped) || '' }}
-            ${{ steps.slidev.outputs.bumped && format('- slidev: {0}', steps.slidev.outputs.bumped) || '' }}
-            ${{ steps.fuzmit.outputs.bumped && format('- fuzmit: {0}', steps.fuzmit.outputs.bumped) || '' }}
-            ${{ steps.jira_cli.outputs.bumped && format('- jira-cli: {0}', steps.jira_cli.outputs.bumped) || '' }}
-            ${{ steps.toad.outputs.bumped && format('- toad: {0}', steps.toad.outputs.bumped) || '' }}
-            ${{ steps.try.outputs.bumped && format('- try: {0}', steps.try.outputs.bumped) || '' }}
-            ${{ steps.tmux_ide.outputs.bumped && format('- tmux-ide: {0}', steps.tmux_ide.outputs.bumped) || '' }}
-
-            @o6uoq
+          body-path: ${{ steps.autobump.outputs.pr_body_path }}
           branch: auto-bump
           delete-branch: true
