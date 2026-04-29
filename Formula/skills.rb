@@ -3,8 +3,8 @@ require "language/node"
 class Skills < Formula
   desc "CLI for the open agent skills ecosystem"
   homepage "https://github.com/vercel-labs/skills"
-  url "https://registry.npmjs.org/skills/-/skills-1.5.2.tgz"
-  sha256 "c724b8a60a30dee2dd4a76dfb71117051ac06daf4ed9527af9ed25b13d93927e"
+  url "https://registry.npmjs.org/skills/-/skills-1.5.3.tgz"
+  sha256 "06110d844e2edda22759587bdd1a2b96a7b3c3f59cde11200dfc0f6514e97244"
   license "MIT"
 
   # Tap-only until upstream provides a Homebrew formula.
