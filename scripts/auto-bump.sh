@@ -3,6 +3,7 @@ set -euo pipefail
 
 MIN_RELEASE_AGE_DAYS=""
 PR_BODY_PATH=""
+HOMEBREW_BREW_RAW_BASE="${HOMEBREW_BREW_RAW_BASE:-https://raw.githubusercontent.com/Homebrew/brew/HEAD/Library/Homebrew}"
 declare -a BUMP_LINES=()
 declare -a TMP_DIRS=()
 
@@ -46,9 +47,20 @@ add_bump_line() {
 
 resolve_npm_policy() {
   local node_helper_source
+  local release_cooldown_source
+  local release_cooldown_constant
 
-  node_helper_source=$(curl -fsSL https://raw.githubusercontent.com/Homebrew/brew/HEAD/Library/Homebrew/language/node.rb)
+  node_helper_source=$(curl -fsSL "${HOMEBREW_BREW_RAW_BASE}/language/node.rb")
   MIN_RELEASE_AGE_DAYS=$(sed -nE 's/.*--min-release-age=([0-9]+).*/\1/p' <<<"${node_helper_source}" | head -n 1)
+
+  if [ -z "${MIN_RELEASE_AGE_DAYS}" ]; then
+    release_cooldown_constant=$(sed -nE 's/.*--min-release-age=#\{Homebrew::([A-Z0-9_]+)\}.*/\1/p' <<<"${node_helper_source}" | head -n 1)
+
+    if [ -n "${release_cooldown_constant}" ]; then
+      release_cooldown_source=$(curl -fsSL "${HOMEBREW_BREW_RAW_BASE}/release_cooldown.rb")
+      MIN_RELEASE_AGE_DAYS=$(sed -nE 's/.*'"${release_cooldown_constant}"'[[:space:]]*=[[:space:]]*(T\.let\()?([0-9]+).*/\2/p' <<<"${release_cooldown_source}" | head -n 1)
+    fi
+  fi
 
   if [ -z "${MIN_RELEASE_AGE_DAYS}" ] || ! [[ "${MIN_RELEASE_AGE_DAYS}" =~ ^[0-9]+$ ]]; then
     echo "Failed to resolve Homebrew npm --min-release-age policy." >&2
@@ -409,6 +421,11 @@ main() {
   require_commands
 
   resolve_npm_policy
+
+  if [ "${AUTOBUMP_RESOLVE_POLICY_ONLY:-}" = "1" ]; then
+    return
+  fi
+
   validate_npm_min_release_age_support
 
   bump_agent_scan

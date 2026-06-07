@@ -1,0 +1,1 @@
+- 2026-06-07T19:28:31Z | ci/autobump | Homebrew moved npm cooldown value behind shared constant | resolver now follows constant indirection and workflow matrix mapping is centralized -> add policy-only resolver checks when future upstream-scraped CI policy changes
