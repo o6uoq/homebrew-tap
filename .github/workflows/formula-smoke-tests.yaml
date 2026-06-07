@@ -32,33 +32,19 @@ jobs:
           fi
 
           ENTRIES=()
-          if grep -qx "Formula/agent-scan.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help"}')
-          fi
-          if grep -qx "Formula/openspec.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}')
-          fi
-          if grep -qx "Formula/paperclip.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"paperclip","smoke_cmd":"paperclipai --version"}')
-          fi
-          if grep -qx "Formula/skills.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version"}')
-          fi
-          if grep -qx "Formula/fuzmit.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help"}')
-          fi
-          if grep -qx "Formula/slidev.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}')
-          fi
-          if grep -qx "Formula/try.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help"}')
-          fi
-          if grep -qx "Formula/toad.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help"}')
-          fi
-          if grep -qx "Formula/tmux-ide.rb" <<<"${CHANGED_FILES}"; then
-            ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version"}')
-          fi
+          while IFS= read -r file; do
+            case "${file}" in
+              Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help"}') ;;
+              Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}') ;;
+              Formula/paperclip.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"paperclip","smoke_cmd":"paperclipai --version"}') ;;
+              Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version"}') ;;
+              Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help"}') ;;
+              Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}') ;;
+              Formula/try.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help"}') ;;
+              Formula/toad.rb) ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help"}') ;;
+              Formula/tmux-ide.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version"}') ;;
+            esac
+          done <<<"${CHANGED_FILES}"
 
           if [ "${#ENTRIES[@]}" -eq 0 ]; then
             echo 'matrix={"include":[]}' >> "${GITHUB_OUTPUT}"
