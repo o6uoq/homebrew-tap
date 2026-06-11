@@ -1,1 +1,3 @@
 - 2026-06-07T19:28:31Z | ci/autobump | Homebrew moved npm cooldown value behind shared constant | resolver now follows constant indirection and workflow matrix mapping is centralized -> add policy-only resolver checks when future upstream-scraped CI policy changes
+- 2026-06-11T10:35:00Z | ci/autobump | multi-asset release published mixed platform versions | shared asset validation now requires every Homebrew-supported platform at one version -> encode platform lists once per formula and skip only incomplete packages
+- 2026-06-11T12:17:00Z | ci/smoke | current Homebrew Linux install requires rootless bwrap | workflow bootstraps bubblewrap and user-namespace sysctls instead of disabling sandbox -> keep smoke tests close to real Homebrew behavior

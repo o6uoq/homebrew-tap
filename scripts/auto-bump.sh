@@ -17,7 +17,7 @@ trap cleanup EXIT
 require_commands() {
   local cmd
   local missing=()
-  for cmd in curl jq perl npm shasum grep sed mktemp head git; do
+  for cmd in curl jq perl npm shasum grep sed mktemp head paste git; do
     if ! command -v "${cmd}" >/dev/null 2>&1; then
       missing+=("${cmd}")
     fi
@@ -172,20 +172,146 @@ bump_npm_formula() {
   add_bump_line "${id}" "${current_version}" "${latest_version}"
 }
 
+release_asset_sha() {
+  local release_json="$1"
+  local asset_name="$2"
+  local sha
+
+  sha=$(jq -r --arg name "${asset_name}" '.assets[] | select(.name == $name) | .digest' <<<"${release_json}" | sed 's/^sha256://' | head -n 1)
+  if [ -n "${sha}" ] && [ "${sha}" != "null" ] && [[ "${sha}" =~ ^[a-f0-9]{64}$ ]]; then
+    printf '%s\n' "${sha}"
+  fi
+}
+
+release_asset_candidates() {
+  local release_json="$1"
+  local asset_prefix="$2"
+  local asset_suffix="$3"
+
+  jq -r --arg prefix "${asset_prefix}" --arg suffix "${asset_suffix}" '
+    .assets[].name
+    | select(startswith($prefix) and endswith($suffix))
+  ' <<<"${release_json}" | paste -sd ',' -
+}
+
+write_multi_asset_digests() {
+  local id="$1"
+  local latest="$2"
+  local release_json="$3"
+  local asset_spec_path="$4"
+  local digest_path="$5"
+  local missing=()
+  local platform
+  local asset_name
+  local url_fragment
+  local asset_prefix
+  local asset_suffix
+  local sha
+  local candidates
+
+  : > "${digest_path}"
+
+  while IFS='|' read -r platform asset_name url_fragment asset_prefix asset_suffix; do
+    [ -n "${platform}" ] || continue
+
+    sha=$(release_asset_sha "${release_json}" "${asset_name}")
+    if [ -z "${sha}" ]; then
+      candidates=$(release_asset_candidates "${release_json}" "${asset_prefix}" "${asset_suffix}")
+      if [ -n "${candidates}" ]; then
+        missing+=("${asset_name} (found: ${candidates})")
+      else
+        missing+=("${asset_name}")
+      fi
+      continue
+    fi
+
+    printf '%s|%s|%s|%s\n' "${platform}" "${asset_name}" "${url_fragment}" "${sha}" >> "${digest_path}"
+  done < "${asset_spec_path}"
+
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "Skipping ${id} ${latest}: missing required release asset(s): ${missing[*]}."
+    return 1
+  fi
+}
+
+rewrite_multi_asset_formula() {
+  local id="$1"
+  local formula_path="$2"
+  local current="$3"
+  local latest="$4"
+  local digest_path="$5"
+  local version_count
+  local platform
+  local asset_name
+  local url_fragment
+  local sha
+  local url_count
+  local sha_count
+
+  CURRENT_VERSION="${current}" LATEST_VERSION="${latest}" \
+    perl -0i -pe '
+      s#^  version "\Q$ENV{CURRENT_VERSION}\E"#  version "$ENV{LATEST_VERSION}"#m;
+      s#\Q$ENV{CURRENT_VERSION}\E#$ENV{LATEST_VERSION}#g;
+    ' "${formula_path}"
+
+  while IFS='|' read -r platform asset_name url_fragment sha; do
+    ASSET_NAME="${asset_name}" ASSET_SHA="${sha}" \
+      perl -0i -pe '
+        $asset = quotemeta($ENV{ASSET_NAME});
+        $sha = $ENV{ASSET_SHA};
+        s#($asset"\n      sha256 ")[a-f0-9]{64}"#${1}$sha"#m;
+      ' "${formula_path}"
+  done < "${digest_path}"
+
+  version_count=$(grep -F -c "version \"${latest}\"" "${formula_path}")
+  if [ "${version_count}" -ne 1 ]; then
+    echo "${id} bump rewrite validation failed" >&2
+    echo "VERSION_COUNT=${version_count}" >&2
+    exit 1
+  fi
+
+  while IFS='|' read -r platform asset_name url_fragment sha; do
+    url_count=$(grep -F -c "${url_fragment}" "${formula_path}")
+    sha_count=$(grep -F -c "sha256 \"${sha}\"" "${formula_path}")
+    if [ "${url_count}" -ne 1 ] || [ "${sha_count}" -ne 1 ]; then
+      echo "${id} ${platform} bump rewrite validation failed" >&2
+      echo "URL_COUNT=${url_count} SHA_COUNT=${sha_count} ASSET=${asset_name}" >&2
+      exit 1
+    fi
+  done < "${digest_path}"
+}
+
+write_agent_scan_asset_spec() {
+  local latest="$1"
+  local asset_spec_path="$2"
+
+  {
+    printf 'macos-x86_64|agent-scan-%s-macos-x86_64|releases/download/v%s/agent-scan-%s-macos-x86_64|agent-scan-|-macos-x86_64\n' "${latest}" "${latest}" "${latest}"
+    printf 'macos-arm64|agent-scan-%s-macos-arm64|releases/download/v%s/agent-scan-%s-macos-arm64|agent-scan-|-macos-arm64\n' "${latest}" "${latest}" "${latest}"
+    printf 'linux-x86_64|agent-scan-%s-linux-x86_64|releases/download/v%s/agent-scan-%s-linux-x86_64|agent-scan-|-linux-x86_64\n' "${latest}" "${latest}" "${latest}"
+  } > "${asset_spec_path}"
+}
+
+write_fuzmit_asset_spec() {
+  local latest="$1"
+  local asset_spec_path="$2"
+
+  {
+    printf 'darwin-amd64|fuzmit_%s_darwin_amd64.tar.gz|releases/download/v%s/fuzmit_%s_darwin_amd64.tar.gz|fuzmit_|_darwin_amd64.tar.gz\n' "${latest}" "${latest}" "${latest}"
+    printf 'darwin-arm64|fuzmit_%s_darwin_arm64.tar.gz|releases/download/v%s/fuzmit_%s_darwin_arm64.tar.gz|fuzmit_|_darwin_arm64.tar.gz\n' "${latest}" "${latest}" "${latest}"
+    printf 'linux-amd64|fuzmit_%s_linux_amd64.tar.gz|releases/download/v%s/fuzmit_%s_linux_amd64.tar.gz|fuzmit_|_linux_amd64.tar.gz\n' "${latest}" "${latest}" "${latest}"
+    printf 'linux-arm64|fuzmit_%s_linux_arm64.tar.gz|releases/download/v%s/fuzmit_%s_linux_arm64.tar.gz|fuzmit_|_linux_arm64.tar.gz\n' "${latest}" "${latest}" "${latest}"
+  } > "${asset_spec_path}"
+}
+
 bump_agent_scan() {
   local formula_path="Formula/agent-scan.rb"
   local release_json
   local latest
   local current
-  local mac_sha
-  local linux_sha
-  local mac_url_expect
-  local linux_url_expect
-  local mac_url_count
-  local linux_url_count
-  local version_count
-  local mac_sha_count
-  local linux_sha_count
+  local tmp_dir
+  local asset_spec_path
+  local digest_path
 
   release_json=$(curl -fsSL https://api.github.com/repos/snyk/agent-scan/releases/latest)
   latest=$(jq -r '.tag_name' <<<"${release_json}" | tr -d 'v')
@@ -195,108 +321,47 @@ bump_agent_scan() {
     return
   fi
 
-  mac_sha=$(jq -r --arg ver "${latest}" '.assets[] | select(.name == ("agent-scan-" + $ver + "-macos-arm64")) | .digest' <<<"${release_json}" | sed 's/^sha256://')
-  linux_sha=$(jq -r --arg ver "${latest}" '.assets[] | select(.name == ("agent-scan-" + $ver + "-linux-x86_64")) | .digest' <<<"${release_json}" | sed 's/^sha256://')
+  tmp_dir=$(make_tmp_dir)
+  asset_spec_path="${tmp_dir}/agent-scan-assets.txt"
+  digest_path="${tmp_dir}/agent-scan-digests.txt"
 
-  if [ -z "${mac_sha}" ] || [ -z "${linux_sha}" ] || [ "${mac_sha}" = "null" ] || [ "${linux_sha}" = "null" ]; then
-    echo "Failed to resolve release checksums for agent-scan ${latest}" >&2
-    exit 1
+  write_agent_scan_asset_spec "${latest}" "${asset_spec_path}"
+  if ! write_multi_asset_digests "agent-scan" "${latest}" "${release_json}" "${asset_spec_path}" "${digest_path}"; then
+    return
   fi
 
-  perl -0i -pe '
-    s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${latest}"'"#m;
-    s#/releases/download/v[0-9]+\.[0-9]+\.[0-9]+/#/releases/download/v'"${latest}"'/#g;
-    s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-macos-arm64#agent-scan-'"${latest}"'-macos-arm64#g;
-    s#agent-scan-[0-9]+\.[0-9]+\.[0-9]+-linux-x86_64#agent-scan-'"${latest}"'-linux-x86_64#g;
-    s#(macos-arm64"\n      sha256 ")[a-f0-9]{64}"#${1}'"${mac_sha}"'"#m;
-    s#(linux-x86_64"\n      sha256 ")[a-f0-9]{64}"#${1}'"${linux_sha}"'"#m;
-  ' "${formula_path}"
-
-  mac_url_expect="releases/download/v${latest}/agent-scan-${latest}-macos-arm64"
-  linux_url_expect="releases/download/v${latest}/agent-scan-${latest}-linux-x86_64"
-  mac_url_count=$(grep -F -c "${mac_url_expect}" "${formula_path}")
-  linux_url_count=$(grep -F -c "${linux_url_expect}" "${formula_path}")
-  version_count=$(grep -F -c "version \"${latest}\"" "${formula_path}")
-  mac_sha_count=$(grep -F -c "sha256 \"${mac_sha}\"" "${formula_path}")
-  linux_sha_count=$(grep -F -c "sha256 \"${linux_sha}\"" "${formula_path}")
-
-  if [ "${mac_url_count}" -ne 1 ] || [ "${linux_url_count}" -ne 1 ] || [ "${version_count}" -ne 1 ] || [ "${mac_sha_count}" -ne 1 ] || [ "${linux_sha_count}" -ne 1 ]; then
-    echo "agent-scan bump rewrite validation failed" >&2
-    echo "MAC_URL_COUNT=${mac_url_count} LINUX_URL_COUNT=${linux_url_count} VERSION_COUNT=${version_count} MAC_SHA_COUNT=${mac_sha_count} LINUX_SHA_COUNT=${linux_sha_count}" >&2
-    exit 1
-  fi
+  rewrite_multi_asset_formula "agent-scan" "${formula_path}" "${current}" "${latest}" "${digest_path}"
 
   add_bump_line "agent-scan" "${current}" "${latest}"
 }
 
 bump_fuzmit() {
   local formula_path="Formula/fuzmit.rb"
+  local release_json
   local latest
   local current
-  local checksums
-  local darwin_amd64_sha
-  local darwin_arm64_sha
-  local linux_amd64_sha
-  local linux_arm64_sha
-  local version_count
-  local darwin_amd64_url_count
-  local darwin_arm64_url_count
-  local linux_amd64_url_count
-  local linux_arm64_url_count
-  local darwin_amd64_sha_count
-  local darwin_arm64_sha_count
-  local linux_amd64_sha_count
-  local linux_arm64_sha_count
+  local tmp_dir
+  local asset_spec_path
+  local digest_path
 
-  latest=$(curl -fsSL https://api.github.com/repos/o6uoq/fuzmit/releases/latest | jq -r '.tag_name' | tr -d 'v')
+  release_json=$(curl -fsSL https://api.github.com/repos/o6uoq/fuzmit/releases/latest)
+  latest=$(jq -r '.tag_name' <<<"${release_json}" | tr -d 'v')
   current=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' "${formula_path}")
 
   if [ "${latest}" = "${current}" ]; then
     return
   fi
 
-  checksums=$(curl -fsSL "https://github.com/o6uoq/fuzmit/releases/download/v${latest}/checksums.txt")
+  tmp_dir=$(make_tmp_dir)
+  asset_spec_path="${tmp_dir}/fuzmit-assets.txt"
+  digest_path="${tmp_dir}/fuzmit-digests.txt"
 
-  darwin_amd64_sha=$(echo "${checksums}" | grep "darwin_amd64" | cut -d' ' -f1)
-  darwin_arm64_sha=$(echo "${checksums}" | grep "darwin_arm64" | cut -d' ' -f1)
-  linux_amd64_sha=$(echo "${checksums}" | grep "linux_amd64" | cut -d' ' -f1)
-  linux_arm64_sha=$(echo "${checksums}" | grep "linux_arm64" | cut -d' ' -f1)
-
-  for value in "${darwin_amd64_sha}" "${darwin_arm64_sha}" "${linux_amd64_sha}" "${linux_arm64_sha}"; do
-    if [ -z "${value}" ] || ! echo "${value}" | grep -qE '^[a-f0-9]{64}$'; then
-      echo "Invalid checksum for fuzmit release ${latest}" >&2
-      exit 1
-    fi
-  done
-
-  perl -0i -pe '
-    s#^  version "[0-9]+\.[0-9]+\.[0-9]+"#  version "'"${latest}"'"#m;
-    s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_darwin_amd64#fuzmit_'"${latest}"'_darwin_amd64#g;
-    s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_darwin_arm64#fuzmit_'"${latest}"'_darwin_arm64#g;
-    s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_amd64#fuzmit_'"${latest}"'_linux_amd64#g;
-    s#fuzmit_[0-9]+\.[0-9]+\.[0-9]+_linux_arm64#fuzmit_'"${latest}"'_linux_arm64#g;
-    s#/v[0-9]+\.[0-9]+\.[0-9]+/#/v'"${latest}"'/#g;
-    s#(darwin_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${darwin_amd64_sha}"'"#m;
-    s#(darwin_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${darwin_arm64_sha}"'"#m;
-    s#(linux_amd64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${linux_amd64_sha}"'"#m;
-    s#(linux_arm64\.tar\.gz"\n      sha256 ")[a-f0-9]{64}"#${1}'"${linux_arm64_sha}"'"#m;
-  ' "${formula_path}"
-
-  version_count=$(grep -F -c "version \"${latest}\"" "${formula_path}")
-  darwin_amd64_url_count=$(grep -F -c "releases/download/v${latest}/fuzmit_${latest}_darwin_amd64.tar.gz" "${formula_path}")
-  darwin_arm64_url_count=$(grep -F -c "releases/download/v${latest}/fuzmit_${latest}_darwin_arm64.tar.gz" "${formula_path}")
-  linux_amd64_url_count=$(grep -F -c "releases/download/v${latest}/fuzmit_${latest}_linux_amd64.tar.gz" "${formula_path}")
-  linux_arm64_url_count=$(grep -F -c "releases/download/v${latest}/fuzmit_${latest}_linux_arm64.tar.gz" "${formula_path}")
-  darwin_amd64_sha_count=$(grep -F -c "sha256 \"${darwin_amd64_sha}\"" "${formula_path}")
-  darwin_arm64_sha_count=$(grep -F -c "sha256 \"${darwin_arm64_sha}\"" "${formula_path}")
-  linux_amd64_sha_count=$(grep -F -c "sha256 \"${linux_amd64_sha}\"" "${formula_path}")
-  linux_arm64_sha_count=$(grep -F -c "sha256 \"${linux_arm64_sha}\"" "${formula_path}")
-
-  if [ "${version_count}" -ne 1 ] || [ "${darwin_amd64_url_count}" -ne 1 ] || [ "${darwin_arm64_url_count}" -ne 1 ] || [ "${linux_amd64_url_count}" -ne 1 ] || [ "${linux_arm64_url_count}" -ne 1 ] || [ "${darwin_amd64_sha_count}" -ne 1 ] || [ "${darwin_arm64_sha_count}" -ne 1 ] || [ "${linux_amd64_sha_count}" -ne 1 ] || [ "${linux_arm64_sha_count}" -ne 1 ]; then
-    echo "fuzmit bump rewrite validation failed" >&2
-    echo "VERSION_COUNT=${version_count} DARWIN_AMD64_URL_COUNT=${darwin_amd64_url_count} DARWIN_ARM64_URL_COUNT=${darwin_arm64_url_count} LINUX_AMD64_URL_COUNT=${linux_amd64_url_count} LINUX_ARM64_URL_COUNT=${linux_arm64_url_count} DARWIN_AMD64_SHA_COUNT=${darwin_amd64_sha_count} DARWIN_ARM64_SHA_COUNT=${darwin_arm64_sha_count} LINUX_AMD64_SHA_COUNT=${linux_amd64_sha_count} LINUX_ARM64_SHA_COUNT=${linux_arm64_sha_count}" >&2
-    exit 1
+  write_fuzmit_asset_spec "${latest}" "${asset_spec_path}"
+  if ! write_multi_asset_digests "fuzmit" "${latest}" "${release_json}" "${asset_spec_path}" "${digest_path}"; then
+    return
   fi
+
+  rewrite_multi_asset_formula "fuzmit" "${formula_path}" "${current}" "${latest}" "${digest_path}"
 
   add_bump_line "fuzmit" "${current}" "${latest}"
 }
