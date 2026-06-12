@@ -3,8 +3,8 @@ require "language/node"
 class Paperclip < Formula
   desc "Open-source orchestration for zero-human companies"
   homepage "https://github.com/paperclipai/paperclip"
-  url "https://registry.npmjs.org/paperclipai/-/paperclipai-2026.529.0.tgz"
-  sha256 "7b666390e9b2dd6a7c8e98b556fe323e0b980df47fef61441c6180090ebf955f"
+  url "https://registry.npmjs.org/paperclipai/-/paperclipai-2026.609.0.tgz"
+  sha256 "66078b6d1970e1fc5a1cf24c213a2c70940a145f04f92f30a0d12bb7614c31b2"
   license "MIT"
 
   # Tap-only until upstream provides a Homebrew formula.
