@@ -35,6 +35,7 @@ jobs:
           while IFS= read -r file; do
             case "${file}" in
               Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help"}') ;;
+              Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help"}') ;;
               Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}') ;;
               Formula/paperclip.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"paperclip","smoke_cmd":"paperclipai --version"}') ;;
               Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version"}') ;;

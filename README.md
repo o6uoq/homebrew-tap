@@ -5,6 +5,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 ## 📦 Formulas
 
 - [agent-scan](https://github.com/snyk/agent-scan) - security scanner for agents, MCP servers, and skills
+- [context-mode](https://github.com/mksglu/context-mode) - MCP server for local context-window optimization
 - [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits, but fuzzy
 - [jira-cli](https://github.com/foxythemes/jira-cli) - command-line client for Jira API
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
@@ -21,6 +22,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 brew install o6uoq/tap/<formula>
 # examples:
 brew install o6uoq/tap/agent-scan
+brew install o6uoq/tap/context-mode
 brew install o6uoq/tap/fuzmit
 brew install o6uoq/tap/jira-cli
 brew install o6uoq/tap/openspec
