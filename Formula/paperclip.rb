@@ -13,10 +13,19 @@ class Paperclip < Formula
 
   def install
     system "npm", "install", *std_npm_args
+    cd libexec/"lib/node_modules/paperclipai/node_modules/@embedded-postgres/darwin-arm64" do
+      system "node", "scripts/hydrate-symlinks.js"
+    end
+    cd libexec/"lib/node_modules/paperclipai" do
+      system "npm", "rebuild", "sqlite3", "--devdir=#{buildpath/".node-gyp"}"
+    end
     bin.install_symlink libexec.glob("bin/*")
   end
 
   test do
     assert_match version.to_s, shell_output("#{bin}/paperclipai --version")
+    system "node", "-e", "require('#{libexec}/lib/node_modules/paperclipai/node_modules/sqlite3')"
+    system libexec/"lib/node_modules/paperclipai/node_modules/@embedded-postgres/darwin-arm64/native/bin/initdb",
+           "--version"
   end
 end
