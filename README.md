@@ -8,6 +8,7 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 - [context-mode](https://github.com/mksglu/context-mode) - MCP server for local context-window optimization
 - [fuzmit](https://github.com/o6uoq/fuzmit) - conventional commits, but fuzzy
 - [jira-cli](https://github.com/foxythemes/jira-cli) - command-line client for Jira API
+- [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) - workflow and orchestration layer for OpenAI Codex CLI
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
 - [paperclip](https://github.com/paperclipai/paperclip) - open-source orchestration for zero-human companies
 - [skills](https://github.com/vercel-labs/skills) - CLI for the open agent skills ecosystem
@@ -25,6 +26,7 @@ brew install o6uoq/tap/agent-scan
 brew install o6uoq/tap/context-mode
 brew install o6uoq/tap/fuzmit
 brew install o6uoq/tap/jira-cli
+brew install o6uoq/tap/oh-my-codex
 brew install o6uoq/tap/openspec
 brew install o6uoq/tap/paperclip
 brew install o6uoq/tap/skills
