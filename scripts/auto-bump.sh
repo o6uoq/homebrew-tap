@@ -495,7 +495,6 @@ main() {
 
   bump_agent_scan
   bump_npm_formula "openspec" "Formula/openspec.rb" "@fission-ai/openspec"
-  bump_npm_formula "paperclip" "Formula/paperclip.rb" "paperclipai"
   bump_npm_formula "skills" "Formula/skills.rb" "skills"
   bump_npm_formula "slidev" "Formula/slidev.rb" "@slidev/cli"
   bump_fuzmit
