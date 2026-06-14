@@ -10,7 +10,6 @@ Tap for formulas not available in `homebrew/core` or an official upstream tap.
 - [jira-cli](https://github.com/foxythemes/jira-cli) - command-line client for Jira API
 - [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) - workflow and orchestration layer for OpenAI Codex CLI
 - [openspec](https://github.com/Fission-AI/OpenSpec) - spec-driven development CLI
-- [paperclip](https://github.com/paperclipai/paperclip) - open-source orchestration for zero-human companies
 - [skills](https://github.com/vercel-labs/skills) - CLI for the open agent skills ecosystem
 - [slidev](https://github.com/slidevjs/slidev) - presentation slides for developers
 - [tmux-ide](https://github.com/wavyrai/tmux-ide) - tmux-powered terminal IDE from `ide.yml`
@@ -28,7 +27,6 @@ brew install o6uoq/tap/fuzmit
 brew install o6uoq/tap/jira-cli
 brew install o6uoq/tap/oh-my-codex
 brew install o6uoq/tap/openspec
-brew install o6uoq/tap/paperclip
 brew install o6uoq/tap/skills
 brew install o6uoq/tap/slidev
 brew install o6uoq/tap/tmux-ide
