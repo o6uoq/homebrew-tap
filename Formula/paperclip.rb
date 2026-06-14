@@ -13,8 +13,12 @@ class Paperclip < Formula
 
   def install
     system "npm", "install", *std_npm_args
-    cd libexec/"lib/node_modules/paperclipai/node_modules/@embedded-postgres/darwin-arm64" do
-      system "node", "scripts/hydrate-symlinks.js"
+    (libexec/"lib/node_modules/paperclipai/node_modules/@embedded-postgres").children.each do |package|
+      next unless (package/"native/pg-symlinks.json").exist?
+
+      cd package do
+        system "node", "scripts/hydrate-symlinks.js"
+      end
     end
     cd libexec/"lib/node_modules/paperclipai" do
       system "npm", "rebuild", "sqlite3", "--devdir=#{buildpath/".node-gyp"}"
@@ -25,7 +29,8 @@ class Paperclip < Formula
   test do
     assert_match version.to_s, shell_output("#{bin}/paperclipai --version")
     system "node", "-e", "require('#{libexec}/lib/node_modules/paperclipai/node_modules/sqlite3')"
-    system libexec/"lib/node_modules/paperclipai/node_modules/@embedded-postgres/darwin-arm64/native/bin/initdb",
-           "--version"
+    initdb = (libexec/"lib/node_modules/paperclipai/node_modules/@embedded-postgres").glob("*/native/bin/initdb").first
+    refute_nil initdb
+    system initdb, "--version"
   end
 end
