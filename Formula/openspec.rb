@@ -3,8 +3,8 @@ require "language/node"
 class Openspec < Formula
   desc "AI-native system for spec-driven development"
   homepage "https://github.com/Fission-AI/OpenSpec"
-  url "https://registry.npmjs.org/@fission-ai/openspec/-/openspec-1.4.1.tgz"
-  sha256 "c039b617a961499f49466791842619189998edddc8b05cfedb22c32142a0c77a"
+  url "https://registry.npmjs.org/@fission-ai/openspec/-/openspec-1.5.0.tgz"
+  sha256 "9e0c3c1b88ed3e8de9e976916104ca4f3cc8b17aded4a61d8d25595c58b1b8e2"
   license "MIT"
 
   # Tap-only until upstream provides a Homebrew formula.
