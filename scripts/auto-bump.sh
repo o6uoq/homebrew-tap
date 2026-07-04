@@ -494,6 +494,7 @@ main() {
   validate_npm_min_release_age_support
 
   bump_agent_scan
+  bump_npm_formula "context-mode" "Formula/context-mode.rb" "context-mode"
   bump_npm_formula "openspec" "Formula/openspec.rb" "@fission-ai/openspec"
   bump_npm_formula "skills" "Formula/skills.rb" "skills"
   bump_npm_formula "slidev" "Formula/slidev.rb" "@slidev/cli"
