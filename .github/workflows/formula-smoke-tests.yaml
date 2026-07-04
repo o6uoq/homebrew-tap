@@ -95,8 +95,18 @@ jobs:
           sudo sysctl -w user.max_user_namespaces=28633
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
 
+      - name: Trust tmux-ide dependency
+        if: ${{ matrix.formula == 'tmux-ide' }}
+        run: |
+          brew tap oven-sh/bun
+          HOMEBREW_ALLOWED_TAPS="${TAP_NAME} oven-sh/bun" brew trust --formula oven-sh/bun/bun
+
       - name: Install formula
-        run: brew install --formula "${TAP_NAME}/${{ matrix.formula }}"
+        run: |
+          if [ "${{ matrix.formula }}" = "tmux-ide" ]; then
+            export HOMEBREW_ALLOWED_TAPS="${TAP_NAME} oven-sh/bun"
+          fi
+          brew install --formula "${TAP_NAME}/${{ matrix.formula }}"
 
       - name: Run smoke command
         run: ${{ matrix.smoke_cmd }}
