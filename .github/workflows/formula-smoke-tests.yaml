@@ -36,16 +36,16 @@ jobs:
             [ -f "${file}" ] || continue
 
             case "${file}" in
-              Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help","extra_taps":""}') ;;
-              Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help","extra_taps":""}') ;;
-              Formula/oh-my-codex.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"oh-my-codex","smoke_cmd":"omx --help","extra_taps":""}') ;;
-              Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help","extra_taps":""}') ;;
-              Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version","extra_taps":""}') ;;
-              Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help","extra_taps":""}') ;;
-              Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help","extra_taps":""}') ;;
-              Formula/try.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help","extra_taps":""}') ;;
-              Formula/toad.rb) ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help","extra_taps":""}') ;;
-              Formula/tmux-ide.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version","extra_taps":"oven-sh/bun"}') ;;
+              Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/oh-my-codex.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"oh-my-codex","smoke_cmd":"omx --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/try.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/toad.rb) ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help","extra_taps":"","trusted_formulae":""}') ;;
+              Formula/tmux-ide.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version","extra_taps":"oven-sh/bun","trusted_formulae":"oven-sh/bun/bun"}') ;;
             esac
           done <<<"${CHANGED_FILES}"
 
@@ -101,6 +101,13 @@ jobs:
         run: |
           for tap in ${{ matrix.extra_taps }}; do
             brew tap "${tap}"
+          done
+
+      - name: Trust formula dependencies
+        if: ${{ matrix.trusted_formulae != '' }}
+        run: |
+          for formula in ${{ matrix.trusted_formulae }}; do
+            brew trust --formula "${formula}"
           done
 
       - name: Install formula
