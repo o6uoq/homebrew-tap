@@ -36,16 +36,16 @@ jobs:
             [ -f "${file}" ] || continue
 
             case "${file}" in
-              Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help"}') ;;
-              Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help"}') ;;
-              Formula/oh-my-codex.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"oh-my-codex","smoke_cmd":"omx --help"}') ;;
-              Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}') ;;
-              Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version"}') ;;
-              Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help"}') ;;
-              Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}') ;;
-              Formula/try.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help"}') ;;
-              Formula/toad.rb) ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help"}') ;;
-              Formula/tmux-ide.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version"}') ;;
+              Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help","extra_taps":""}') ;;
+              Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help","extra_taps":""}') ;;
+              Formula/oh-my-codex.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"oh-my-codex","smoke_cmd":"omx --help","extra_taps":""}') ;;
+              Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help","extra_taps":""}') ;;
+              Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version","extra_taps":""}') ;;
+              Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help","extra_taps":""}') ;;
+              Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help","extra_taps":""}') ;;
+              Formula/try.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help","extra_taps":""}') ;;
+              Formula/toad.rb) ENTRIES+=('{"os":"macos-latest","formula":"toad","smoke_cmd":"toad --help","extra_taps":""}') ;;
+              Formula/tmux-ide.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"tmux-ide","smoke_cmd":"tmux-ide --version","extra_taps":"oven-sh/bun"}') ;;
             esac
           done <<<"${CHANGED_FILES}"
 
@@ -75,6 +75,7 @@ jobs:
       matrix: ${{ fromJson(needs.detect.outputs.matrix) }}
     env:
       HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_ALLOWED_TAPS: "${{ github.repository_owner }}/tap ${{ matrix.extra_taps }}"
       TAP_NAME: "${{ github.repository_owner }}/tap"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -94,6 +95,13 @@ jobs:
           sudo sysctl -w kernel.unprivileged_userns_clone=1
           sudo sysctl -w user.max_user_namespaces=28633
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
+      - name: Tap formula dependencies
+        if: ${{ matrix.extra_taps != '' }}
+        run: |
+          for tap in ${{ matrix.extra_taps }}; do
+            brew tap "${tap}"
+          done
 
       - name: Install formula
         run: brew install --formula "${TAP_NAME}/${{ matrix.formula }}"
