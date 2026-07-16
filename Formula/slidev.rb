@@ -3,8 +3,8 @@ require "language/node"
 class Slidev < Formula
   desc "Presentation slides for developers"
   homepage "https://sli.dev"
-  url "https://registry.npmjs.org/@slidev/cli/-/cli-52.17.0.tgz"
-  sha256 "9225fb81629f6f5d84402bf265a3cdc0c9a101eae3e84c22cb133ecf2d3575bd"
+  url "https://registry.npmjs.org/@slidev/cli/-/cli-52.18.0.tgz"
+  sha256 "175f8c07198f2bfd932fd775e4bea1a4380dca00cb040cfe3071b9ff7b9ab1f8"
   license "MIT"
 
   # PR ref: https://github.com/slidevjs/slidev/pull/2437
