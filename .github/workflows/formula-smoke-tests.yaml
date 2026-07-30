@@ -39,7 +39,6 @@ jobs:
               Formula/agent-scan.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"agent-scan","smoke_cmd":"snyk-agent-scan help"}') ;;
               Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help"}') ;;
               Formula/oh-my-codex.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"oh-my-codex","smoke_cmd":"omx --help"}') ;;
-              Formula/openspec.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"openspec","smoke_cmd":"openspec --help"}') ;;
               Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version"}') ;;
               Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help"}') ;;
               Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}') ;;
