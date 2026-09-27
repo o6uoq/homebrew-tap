@@ -3,8 +3,8 @@ require "language/node"
 class OpenSlide < Formula
   desc "Scaffold open-slide presentation workspaces"
   homepage "https://github.com/1weiho/open-slide"
-  url "https://registry.npmjs.org/@open-slide/cli/-/cli-1.4.1.tgz"
-  sha256 "f72ac606af57a8ff0e6af0dabfa2c498324a11e4005758dc11f7f8e94b89a8fe"
+  url "https://registry.npmjs.org/@open-slide/cli/-/cli-2.0.0.tgz"
+  sha256 "6fcd590e7b184a3e96491d4ea11c02deddbe3fa3e84f649f9db90264e80ea462"
   license "MIT"
 
   # Tap-only until upstream provides a Homebrew formula.
