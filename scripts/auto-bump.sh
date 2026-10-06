@@ -17,7 +17,7 @@ trap cleanup EXIT
 require_commands() {
   local cmd
   local missing=()
-  for cmd in curl jq perl npm shasum grep sed mktemp head paste git; do
+  for cmd in curl jq perl npm shasum grep sed mktemp head paste git gh; do
     if ! command -v "${cmd}" >/dev/null 2>&1; then
       missing+=("${cmd}")
     fi
@@ -313,7 +313,7 @@ bump_agent_scan() {
   local asset_spec_path
   local digest_path
 
-  release_json=$(curl -fsSL https://api.github.com/repos/snyk/agent-scan/releases/latest)
+  release_json=$(gh api repos/snyk/agent-scan/releases/latest)
   latest=$(jq -r '.tag_name' <<<"${release_json}" | tr -d 'v')
   current=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' "${formula_path}")
 
@@ -344,7 +344,7 @@ bump_fuzmit() {
   local asset_spec_path
   local digest_path
 
-  release_json=$(curl -fsSL https://api.github.com/repos/o6uoq/fuzmit/releases/latest)
+  release_json=$(gh api repos/o6uoq/fuzmit/releases/latest)
   latest=$(jq -r '.tag_name' <<<"${release_json}" | tr -d 'v')
   current=$(sed -nE 's#^  version "([0-9]+\.[0-9]+\.[0-9]+)"#\1#p' "${formula_path}")
 
@@ -419,7 +419,7 @@ bump_try() {
   local url_count
   local sha_count
 
-  latest=$(curl -fsSL https://api.github.com/repos/tobi/try/tags | jq -r '.[0].name' | tr -d 'v')
+  latest=$(gh api repos/tobi/try/tags | jq -r '.[0].name' | tr -d 'v')
   current=$(sed -nE 's#.*tags/v([0-9]+\.[0-9]+\.[0-9]+)\.tar\.gz.*#\1#p' "${formula_path}")
 
   if [ -z "${current}" ]; then
@@ -508,4 +508,6 @@ main() {
   emit_outputs
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
