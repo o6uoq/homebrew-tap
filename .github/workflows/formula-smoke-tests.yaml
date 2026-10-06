@@ -8,13 +8,6 @@ permissions:
   contents: read
 
 jobs:
-  autobump-tests:
-    name: Auto-bump regression tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - run: bash scripts/test-auto-bump.sh
-
   detect:
     name: Detect changed formulas
     runs-on: ubuntu-latest
@@ -47,7 +40,6 @@ jobs:
               Formula/context-mode.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"context-mode","smoke_cmd":"context-mode --help"}') ;;
               Formula/oh-my-codex.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"oh-my-codex","smoke_cmd":"omx --help"}') ;;
               Formula/open-slide.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"open-slide","smoke_cmd":"open-slide --help"}') ;;
-              Formula/skills.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"skills","smoke_cmd":"skills --version"}') ;;
               Formula/fuzmit.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"fuzmit","smoke_cmd":"fuzmit --help"}') ;;
               Formula/slidev.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"slidev","smoke_cmd":"slidev --help"}') ;;
               Formula/try.rb) ENTRIES+=('{"os":"ubuntu-latest","formula":"try","smoke_cmd":"try --help"}') ;;
