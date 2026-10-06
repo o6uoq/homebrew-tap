@@ -496,7 +496,6 @@ main() {
   bump_agent_scan
   bump_npm_formula "context-mode" "Formula/context-mode.rb" "context-mode"
   bump_npm_formula "open-slide" "Formula/open-slide.rb" "@open-slide/cli"
-  bump_npm_formula "skills" "Formula/skills.rb" "skills"
   bump_npm_formula "slidev" "Formula/slidev.rb" "@slidev/cli"
   bump_fuzmit
   bump_npm_formula "jira-cli" "Formula/jira-cli.rb" "jira-cl"
@@ -508,6 +507,4 @@ main() {
   emit_outputs
 }
 
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  main "$@"
-fi
+main "$@"
