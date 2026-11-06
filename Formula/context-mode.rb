@@ -3,8 +3,8 @@ require "language/node"
 class ContextMode < Formula
   desc "MCP server for local context-window optimization"
   homepage "https://github.com/mksglu/context-mode"
-  url "https://registry.npmjs.org/context-mode/-/context-mode-2.1.0.tgz"
-  sha256 "fcb73de1f4e3a418d5a5faf84a7f9f637e4ac547baa7bd51953339259dee398c"
+  url "https://registry.npmjs.org/context-mode/-/context-mode-2.1.4.tgz"
+  sha256 "58dce75de0f44acc18672f3bb4f16e67f7a7c7b3bd313fb2ee841b7479539c4d"
   license "Elastic-2.0"
 
   # Tap-only until upstream provides a Homebrew formula.
