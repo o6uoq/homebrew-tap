@@ -1,25 +1,25 @@
 class AgentScan < Formula
   desc "Security scanner for agents, MCP servers, and skills"
   homepage "https://github.com/snyk/agent-scan"
-  version "0.7.0"
+  version "0.7.1"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.7.0/agent-scan-0.7.0-macos-x86_64"
-      sha256 "e9c0e3cb5c6dff389ba4386fec494a39650d7032a460e7f3728e24b4ab1513e9"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.7.1/agent-scan-0.7.1-macos-x86_64"
+      sha256 "d64313a4c839223c3c4531f8d05b0a5e680b8dc7eee42fa73c2acde8962bd889"
     end
 
     if Hardware::CPU.arm?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.7.0/agent-scan-0.7.0-macos-arm64"
-      sha256 "73efcff7a3e02eb7d58852c8aa739bff1965ab55f6d2df8ed2c7d67e8bdfa041"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.7.1/agent-scan-0.7.1-macos-arm64"
+      sha256 "9f468bd6ae53b01672371e1f9de2cfb871d1198d034ff8f1b6be0bf508a8bde7"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/snyk/agent-scan/releases/download/v0.7.0/agent-scan-0.7.0-linux-x86_64"
-      sha256 "eb05bd2301a5a09d900b17f597d1d26d001825775e8f9456fb2c7f50e66ecbd0"
+      url "https://github.com/snyk/agent-scan/releases/download/v0.7.1/agent-scan-0.7.1-linux-x86_64"
+      sha256 "f9a0a35122aa68b767d53889b517eeececc92efb1c9a709e5b551cd3c2509d0e"
     end
   end
 
