@@ -4,8 +4,8 @@ require "json"
 class TmuxIde < Formula
   desc "Turn any project into a tmux-powered terminal IDE with a simple ide.yml"
   homepage "https://github.com/wavyrai/tmux-ide"
-  url "https://registry.npmjs.org/tmux-ide/-/tmux-ide-2.9.27.tgz"
-  sha256 "e0ba1234e28abd312d09d2ac4877cc728bbe30ac1b8cf71db45f8286696a9350"
+  url "https://registry.npmjs.org/tmux-ide/-/tmux-ide-2.9.28.tgz"
+  sha256 "fb1129a549ba42d47e4b73c2c32d033dbaa2351342733f06e51154fad6605511"
   license "MIT"
   preserve_rpath
 
